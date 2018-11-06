@@ -1,0 +1,33 @@
+{
+  "name": "gridfw-model",
+  "version": "1.0.0",
+  "description": "Model Framework for javascript",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gridfw/gridfw-model.git"
+  },
+  "keywords": [
+    "model",
+    "javascript",
+    "gridfw"
+  ],
+  "author": "khalid rafik",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gridfw/gridfw-model/issues"
+  },
+  "homepage": "https://github.com/gridfw/gridfw-model#readme",
+  "devDependencies": {
+    "cli-table": "^0.3.1",
+    "gulp": "^4.0.0",
+    "gulp-chug": "^0.5.1",
+    "gulp-coffeescript": "0.0.15",
+    "gulp-include": "^2.3.1",
+    "gulp-rename": "^1.4.0",
+    "gulp-util": "^3.0.8"
+  }
+}
