@@ -17,4 +17,22 @@ _define 'type', (options)->
 	throw new Error "Invalid type name: #{name}. must match ^[A-Z][a-zA-Z0-9_-]$" unless /^[A-Z][a-zA-Z0-9_-]$/.test name
 
 	# get name
-	typeDef = _ModelTypes[name] ?= Object.create null
+	typeDef = _ModelTypes[name]
+	unless typeDef # new type
+		throw new Error "Option [check] is required function" unless typeof options.check is 'function'
+		throw new Error "[#{name}] is a reserved name" if typeDef of Model
+		typeDef = _ModelTypes[name] = Object.create null
+		_defineGetter name, _ModelTypeWrapper name
+
+	# set check
+	for k in ['check', 'convert']
+		typeDef[k] = options[k] if options[k]
+
+
+
+###*
+ * wrapper for Types to be used as Model[type] in schema
+###
+_ModelTypeWrapper = (type)->
+	# return getter
+	->
