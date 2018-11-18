@@ -1,0 +1,38 @@
+attributes format:
+
+attribute: [
+		type: reference to Model type
+
+		# type operations
+		check: type check
+		convert: fx to convert value
+
+		# value
+		subSchema
+
+		# flags
+		required: boolean
+		extensible: boolean
+		# JSON
+		jsonIgnore:
+			0: enable json
+			1: json ignore stringify
+			2: json ignore parse
+			3: json ignore all
+		# DB persistance
+		virtual:
+			0: persist, @default
+			1: transient
+
+
+		# default value, could be overrided
+		defaultValue
+		defaultValueFx: function to calculate default value
+
+		# Asserts
+		assertEquals: predefined value
+		assertMin: min or str min length
+		assertMax: max of str max length
+		assertPipe: pipe of assert functions
+		...
+	]

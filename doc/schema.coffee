@@ -47,8 +47,14 @@ Model.get 'modelName'
 ###
 model = Model.from ...
 instance = model() # create new instance of model
+instance = new model() # create new instance of model
 instance = model {} # create new instance of model
 instance instanceof model # true
+instance instanceof Model # true
+
+instance = new Model() # create generic instance
+instance = Model() # create generic instance
+instance = Model {} # create generic instance
 
 ###*
  * Convert a plain object to be of type model
@@ -129,6 +135,7 @@ modelSchema =
 	attribute3	: Model.jsonIgnore # ignore this field when serializing or parsing as json
 	attribute3	: Model.jsonIgnoreStringify # ignore this field when serializing as json
 	attribute3	: Model.jsonIgnoreParse # ignore this field when parsing as json
+	attribute3	: Model.jsonEnable # Enable JSON serialization @default
 
 	# save to data base
 	attribute3	: Model.virtual	# do not save to database
@@ -189,14 +196,12 @@ modelSchema =
 	attr: Model[type].assert
 		min: 415		# alt to .min(415)
 		max: 122214		# alt to .max(122214)
-		length: 1425	# when string, equivalent to max: 1425
+		length: 1425	# when string, length must equals this
 		match: /regex/i
-		onError: "Invalid value"
-		onError: (value)-> "Invalid value: #{value}"
 
 
 	# length
-	attr: Model.String.length(123) # assert string length <= 123
+	attr: Model.String.length(123) # assert string length is 123
 	attr: Model.String.min(123) # assert string length >= 123
 	attr: Model.String.max(2000) # assert string length <= 2000
 	attr: Model.String.between(12, 2000) # assert string length between 12 and 2000
