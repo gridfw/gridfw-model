@@ -3,7 +3,8 @@ This template will help to simulate object format to symplify code
 */
 
 SCHEMA = {
-	proto: Object.create null, // store prototype of this object
+	proto: null, //Object.create null, // store prototype of this object
+	check: null, // check all inner elements with this
 };
 
 // convert to Array
@@ -13,3 +14,10 @@ for(k in SCHEMA)
 
 // index where attributes starts
 SCHEMA.sub = SCHEMA_ARR.length - 1
+
+// attribute descriptors:
+// 		attrName
+// 		attrCheck
+// 		attrConvert
+// 		attrSubSchema (when plain object or array)
+// 		attrValidate

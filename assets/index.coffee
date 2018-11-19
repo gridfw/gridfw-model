@@ -1,7 +1,7 @@
 ###*
  * Model
 ###
-Model = Object.create null
+Model = Object.create _schemaDescriptor
 
 
 #=include consts.coffee
@@ -11,6 +11,9 @@ Model = Object.create null
 ###
 _define = (name, value)-> Object.defineProperty Model, name, value: value
 _defineGetter = (name, value)-> Object.defineProperty Model, name, get: value
+
+# schema
+#=include schema/index.coffee
 
 # Types
 #=include types/index.coffee

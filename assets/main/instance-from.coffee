@@ -91,6 +91,7 @@ _fastInstanceConvert = (instance, model)->
 ###*
  * Convert instance to Model type
  * used when data is from untrusted source
+ * will do validation and any required clean
  * example: JSON from client
 ###
 _instanceConvert = (instance, model)->
@@ -127,10 +128,10 @@ _instanceConvert = (instance, model)->
 		while i < len
 			# load attr info
 			attrName = schema[i]
-			attrCheck= schema[++i]
-			attrConvert= schema[++i]
-			attrSchema= schema[++i]
-			++i
+			attrCheck= schema[i+1]
+			attrConvert= schema[i+2]
+			attrSchema= schema[i+3]
+			i += SCHEMA_COUNT
 			# check for attribute
 			continue unless _owns obj, attrName
 			attrObj = obj[attrName]

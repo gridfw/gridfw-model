@@ -7,12 +7,12 @@ Model
 ###
 .type
 	name: 'Object'
-	check: (data)-> typeof data is 'object'
+	check: (data)-> typeof data is 'object' and not Array.isArray data
 	convert: -> throw new Error 'Invalid Object'
 .type
 	name: 'Array'
 	check: (data)-> Array.isArray data
-	convert: -> throw new Error 'Invalid Array'
+	convert: (data)-> [data] # accept to have the element directly when array contains just one element
 	assertions:
 		min:
 			check: _checkIsNumber

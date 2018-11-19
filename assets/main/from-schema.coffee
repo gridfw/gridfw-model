@@ -21,11 +21,12 @@ _define 'from', (options)->
 
 	# check the name of the model
 	throw new Error "options.name expected string" unless typeof options.name is 'string'
-	options.name = options.name.toLowerCase()
+	modelName = options.name.toLowerCase()
+	throw new Error "Model alreay set: #{modelName}" if ModelRegistry[modelName]
 
 	# check and compile schema
 	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
-	schema = _compileSchema schema
+	schema = _compileSchema options.schema
 
 	# Create Model
 	# Use Model.fromJSON or Model.fromDB to performe recusive convertion
@@ -43,8 +44,18 @@ _define 'from', (options)->
 		_setPrototypeOf instance, modelProto
 		# return instance
 		instance
+	# add schema
+	model[SCHEMA] = schema
 	# set model name
-	_defineProperties model, name: value: options.name
+	_defineProperties model,name: value: modelName
 	_setPrototypeOf model, ModelStatics
+	# add static attributes
+	if 'static' of options
+		_defineProperties model, Object.getOwnPropertyDescriptors options.static
 	# model prototype
 	modelProto = model.prototype = _create ModelPrototype
+	# add to registry
+	ModelRegistry[modelName] = model
+	# return model
+	model
+

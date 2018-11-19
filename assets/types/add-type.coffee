@@ -18,14 +18,17 @@ _define 'type', (options)->
 	throw new Error 'Type name is required' unless options.name
 
 	# Type name
-	name = options.name
+	typeKey = name = options.name
 	name = name.name if typeof name is 'function'
 	throw new Error "Illegal name: #{options.name}" unless typeof name is 'string'
 	throw new Error "Invalid type name: #{name}. must match ^[A-Z][a-zA-Z0-9_-]$" unless /^[A-Z][a-zA-Z0-9_-]$/.test name
 
 	# get name
 	typeDef = _ModelTypes[name]
-	unless typeDef # new type
+	if typeDef
+		# throw error if two different functions with some name
+		throw new Error "Function with same name [#{name}] already set. Please choose functions with different names" unless typeDef.name is typeKey
+	else # new type
 		throw new Error "Option [check] is required function" unless typeof options.check is 'function'
 		throw new Error "[#{name}] is a reserved name" if typeDef of Model
 		typeDef = _ModelTypes[name] = Object.create null
@@ -35,7 +38,7 @@ _define 'type', (options)->
 			return
 
 	# set check
-	for k in ['check', 'convert', 'assert', 'pipe', 'toJSON', 'toDB']
+	for k in ['check', 'convert', 'assert', 'assertions', 'pipe', 'toJSON', 'toDB']
 		typeDef[k] = options[k] if options[k]
 	# chain
 	this
