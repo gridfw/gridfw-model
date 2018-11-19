@@ -28,6 +28,7 @@ _define 'from', (options)->
 	schema = _compileSchema schema
 
 	# Create Model
+	# Use Model.fromJSON or Model.fromDB to performe recusive convertion
 	model = (instance)->
 		# check for "new" operator
 		if `new.target`
@@ -39,7 +40,7 @@ _define 'from', (options)->
 		throw new Error "Illegal arguments" if arguments.length isnt 1
 		throw new Error "Illegal instance" unless typeof instance is 'object' and instance
 		# convert Object
-		_convertToModel instance, model
+		_setPrototypeOf instance, modelProto
 		# return instance
 		instance
 	# set model name
@@ -47,47 +48,3 @@ _define 'from', (options)->
 	_setPrototypeOf model, ModelStatics
 	# model prototype
 	modelProto = model.prototype = _create ModelPrototype
-
-###*
- * Convert object to a type model
-###
-_convertToModel = (instance, model)->
-	schema	= model[SCHEMA]
-	errors	= [] # store convert errors
-	# check for generating function
-	generator = model
-	if TYPE_ATTR of instance
-		generator = ModelRegistry[instance[TYPE_ATTR]]
-		throw new Error "Unknown model: #{instance[TYPE_ATTR]}" unless generator
-		throw new Error "Model [#{generator}] do not extends [#{model}]" unless generator is model or generator.prototype instanceof model
-	# seek inside instance
-	_seekSchema instance, schema, (ele, subSchema)->
-		# set schema to this instance
-		ele[SCHEMA] = subSchema
-		# set prototype
-		_setPrototypeOf ele, subSchema[<%= SCHEMA.proto %>]
-		# if object is enextensible, remove extra attributes
-		# go through attributes
-		i = <%= SCHEMA.sub %>
-		len = subSchema.length
-		while i < len
-			# load data
-			attrName = subSchema[i]
-			attrCheck= subSchema[++i]
-			attrConvert= subSchema[++i]
-			attrSubSchema= subSchema[++i]
-			++i
-			# check for attribute
-			continue unless _owns ele, attrName
-			obj = ele[attrName]
-			try
-				# check / convert
-				unless attrCheck obj
-					obj = ele[attrName] = attrConvert obj
-			catch e
-				delete ele[attrName]
-				errors.push
-					error: e
-					path:	
-
-			
