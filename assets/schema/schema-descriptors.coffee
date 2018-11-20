@@ -15,6 +15,38 @@ _SchemaDescriptorProto = _create null,
 				v.validate
 				v.pipe
 
+###*
+ * Define descriptor
+ * @param {object} options.get	- descriptors using GET method
+ * @param {object} options.fx	- descriptors using functions
+ * @param {function} options.compile	- compilation of result
+###
+_defineDescriptor= (options)->
+	# value
+	if 'value' of desc
+		desc.value = _defineDescriptorWrapper desc.value
+	else if 'get' of desc
+		desc.get = _defineDescriptorWrapper desc.get
+	else
+		throw new Error "Illegal arguments"
+	# define value
+	Object.defineProperty _schemaDescriptor, name, desc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###*
