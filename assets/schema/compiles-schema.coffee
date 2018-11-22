@@ -31,7 +31,7 @@ _compileSchema = (schema)->
 					v= Model.default v
 				# else add this function as prototype property
 				else
-					_defineProperties proto, k, value: v
+					_defineProperty proto, k, value: v
 					continue
 			# if it is an array of objects
 			else if Array.isArray v

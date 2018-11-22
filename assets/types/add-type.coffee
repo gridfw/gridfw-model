@@ -31,14 +31,36 @@ _define 'type', (options)->
 	else # new type
 		throw new Error "Option [check] is required function" unless typeof options.check is 'function'
 		throw new Error "[#{name}] is a reserved name" if typeDef of Model
-		typeDef = _ModelTypes[name] = Object.create null
+		typeDef = _ModelTypes[name] = _create null
 		# define descriptor
-		_defineDescriptor name, get: ->
-			@[<% attrDescriptor.type %>] = typeDef
-			return
-
+		_defineDescriptor
+			get:
+				[name]: ->
+					@type = typeDef
+					# define asserts
+					if typeDef.assert
+						assertObj = @assertObj ?= _create null
+						for k,v of typeDef.assert
+							assertObj[k] = v unless _owns assertObj, k
+					# define pipe
+					(@pipe ?= []).push typeDef.pipe if typeof typeDef.pipe is 'function'
+					# define toJSON
+					@toJSON ?= typeDef.toJSON if typeof typeDef.toJSON is 'function'
+					# define toDB
+					@toDB ?= typeDef.toDB if typeof typeDef.toDB is 'function'
+					return
 	# set check
 	for k in ['check', 'convert', 'assert', 'assertions', 'pipe', 'toJSON', 'toDB']
 		typeDef[k] = options[k] if options[k]
 	# chain
 	this
+###*
+ * define type compiler
+###
+_defineDescriptor
+	compile: (attr, schema, proto, attrPos)->
+		type = @type
+		if type
+			schema[attrPos + <%= SCHEMA.attrCheck %>] = type.check
+			schema[attrPos + <%= SCHEMA.attrConvert %>] = type.convert
+		return

@@ -205,6 +205,7 @@ modelSchema =
 	attr: Model.String.min(123) # assert string length >= 123
 	attr: Model.String.max(2000) # assert string length <= 2000
 	attr: Model.String.between(12, 2000) # assert string length between 12 and 2000
+	attr: Model.String.match(/regex/) # match
 
 	attr: Model.Number.min(123) # assert value >= 123
 	attr: Model.Number.max(2000) # assert value <= 2000
@@ -225,9 +226,4 @@ modelSchema =
 	attr: Model.pipe(->) # do processing on the value
 	attr: Model.pipe(process1).pipe(process2)
 	# string manipulation
-	attr: Model.String.lowercase # convert string to lowercase
-	attr: Model.String.uppercase # convert string to uppercase
-	attr: Model.String.capitalize # capitalize
-	attr: Model.String.trim # trim string
-	attr: Model.String.match(/regex/) # match
 	

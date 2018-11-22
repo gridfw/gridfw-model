@@ -28,6 +28,7 @@ TYPE_ATTR = '_type' # extra attr inside object, refers its Model
 _create = Object.create
 _setPrototypeOf= Object.setPrototypeOf
 _defineProperties= Object.defineProperties
+_defineProperty= Object.defineProperty
 _owns = Reflect.ownKeys
 
 

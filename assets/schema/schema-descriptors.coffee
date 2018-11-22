@@ -1,19 +1,3 @@
-###*
- * schema descriptors
-###
-_SchemaDescriptorProto = _create null,
-	### init object prototype ###
-	initPrototype: value: (proto)->
-
-	### add attr information to compiled schema ###
-	pushSchema: value: (attrName, compiledSchema)->
-		compiledSchema.push attrName
-
-		type.check # check attribute type
-				type.convert # convert attribute type
-				v.nested
-				v.validate
-				v.pipe
 
 ###*
  * Define descriptor
@@ -21,60 +5,24 @@ _SchemaDescriptorProto = _create null,
  * @param {object} options.fx	- descriptors using functions
  * @param {function} options.compile	- compilation of result
 ###
+_descriptorCompilers = [] # set of descriptor compilers
 _defineDescriptor= (options)->
-	# value
-	if 'value' of desc
-		desc.value = _defineDescriptorWrapper desc.value
-	else if 'get' of desc
-		desc.get = _defineDescriptorWrapper desc.get
-	else
-		throw new Error "Illegal arguments"
-	# define value
-	Object.defineProperty _schemaDescriptor, name, desc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###*
- * define descriptor
- * @example
- * _defineDescriptor 'decsName', value: ()->
- * _defineDescriptor 'decsName', get:->
-###
-_schemaDescriptor = _create null
-_defineDescriptor =  (name, desc) ->
-	# value
-	if 'value' of desc
-		desc.value = _defineDescriptorWrapper desc.value
-	else if 'get' of desc
-		desc.get = _defineDescriptorWrapper desc.get
-	else
-		throw new Error "Illegal arguments"
-	# define value
-	Object.defineProperty _schemaDescriptor, name, desc
-
+	# getters
+	if 'get' of options
+		for k,v of options.get
+			_defineProperty _schemaDescriptor, k, get: _defineDescriptorWrapper v
+	# functions
+	if 'fx' of options
+		for k,v of options.get
+			_defineProperty _schemaDescriptor, k, value: _defineDescriptorWrapper v
+	# compile
+	if 'compile' of options
+		_descriptorCompilers.push options.compile
+	return
 ### wrapper ###
 _defaultDescriptor = ->
 	# create descriptor
-	desc = _create _SchemaDescriptorProto,
-		asserts: value: []
-		rules: value: _create null # validation rules, could be overrided ({max: xxx, min: xxxx})
-		pipe: value: [] # pipes
-		protoInit: value: new Set() # init prototype functions
+	desc = _create null
 	# return schema descriptor
 	_create _schemaDescriptor,
 		[DESCRIPTOR]: value: desc
@@ -85,3 +33,4 @@ _defineDescriptorWrapper = (fx) ->
 		fx.apply desc[DESCRIPTOR], arguments
 		# chain
 		desc
+
