@@ -26,7 +26,9 @@ _define 'from', (options)->
 
 	# check and compile schema
 	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
-	schema = _compileSchema options.schema
+	errors = []
+	schema = _compileSchema options.schema,errors
+	throw new Error "Schema contains #{errors.length} errors.\n #{JSON.stringify errors, null, ' '}" if errors.length
 
 	# Create Model
 	# Use Model.fromJSON or Model.fromDB to performe recusive convertion

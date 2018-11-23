@@ -76,7 +76,10 @@ Model.type
 ###*
  * Schema
 ###
-modelSchema =
+modelSchema = Model.extensible.value(subModelSchema)
+modelSchema = [subModelSchema] # list of ...
+modelSchema = Model.list(subModelSchema) # list of ...
+modelSchema = 
 	# Simple type
 	attribute1_0: Boolean# true or false
 	attribute1_1: String	# String with length < 3000, HTML will be escaped
@@ -149,7 +152,14 @@ modelSchema =
 	attribute3: Model.list(Number) # list of numbers
 	attribute3: Model.list(nestedSchema) # list of numbers
 	attribute3: Model.required.list(Number) # required list of numbers
-
+	attribute3: Model.required.list Number, # required list of numbers
+		method1: fx, # method on the list
+		method2: fx, # method 2 on the list
+		staticValue: 14 # static value, string, number, boolean
+		getter: Model.getter(fx)	# getter
+		setter: Model.setter(fx)	# setter
+		getterOnce: Model.default(fx)	# getter once
+		alias: Model.alias('attr')	# alias
 	# Nested objects
 	attribute4_0: subModelSchema # sub model schema for nested object
 	attribute4_1: Model.required.value(subModelSchema) # required nested object

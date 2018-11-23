@@ -24,8 +24,10 @@ _defaultDescriptor = ->
 	# create descriptor
 	desc = _create null
 	# return schema descriptor
-	_create _schemaDescriptor,
+	obj = _create _schemaDescriptor,
 		[DESCRIPTOR]: value: desc
+	desc._ = obj
+	return obj
 _defineDescriptorWrapper = (fx) ->
 	->
 		desc = if this is Model then _defaultDescriptor() else this
@@ -34,3 +36,4 @@ _defineDescriptorWrapper = (fx) ->
 		# chain
 		desc
 
+	

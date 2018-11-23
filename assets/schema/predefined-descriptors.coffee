@@ -69,10 +69,10 @@ _defineDescriptor
 	get:
 		freeze: -> @extensible = off
 		extensible: -> @extensible = on
-	compile: (attr, schema, proto)->
-		#TODO
-		schema[SCHEMA.extensible] = @extensible isnt off
-		return
+	# compile: (attr, schema, proto)->
+	# 	#TODO
+	# 	schema[SCHEMA.extensible] = @extensible isnt off
+	# 	return
 
 ###*
  * Default value
@@ -126,8 +126,7 @@ _defineDescriptor
 				@getter = -> @[value]
 			# getter
 			else if typeof value is 'function'
-				throw new Errro "Getter expects no argument" unless fx.length is 0
-				@getter = fx
+				@_.getter value
 			return
 	compile: (attr, schema, proto)->
 		if typeof @getter is 'function' or typeof @setter is 'function'
@@ -257,13 +256,53 @@ _defineDescriptor
 	fx:
 		value: (arg)->
 			<%= assertArgsLength(1) %>
-			throw new Error "Expected sub schema" unless typeof arg is 'object' and arg and not arg[DESCRIPTOR]
-			throw new Error "Use '[]' instead of '.value' to create lists" if Array.isArray arg
-			@subschema = arg
+			throw new Error 'Illegal use of "Model" keyword' if arg is Model
+			throw new Error "Illegal use of nested object" if @nestedObj or @arrItem or @protoMethod
+			# check if function
+			if typeof arg is 'function'
+				# check if registred type
+				if (t = _ModelTypes[arg.name]) and t.name is arg
+					arg= Model[arg.name]
+				# if date.now, set it as default value
+				else if arg is Date.now
+					arg= Model.default arg
+				# else add this function as prototype property
+				else
+					@protoMethod = arg
+					return
+			# if it is an array of objects
+			else if Array.isArray arg
+				arg = _arrToModelList arg
+			# nested object
+			else if typeof arg is 'object'
+				unless _owns arg, DESCRIPTOR
+					@nestedObj = arg
+					return
+			else
+				throw new Error "Illegal attribute descriptor"
+			# merge
+			arg = arg[DESCRIPTOR]
+			for k,v of arg
+				@[k] = v
 			return
 		compile: (attr, schema, proto, attrPos)->
-			# will be compiled, just to avoid recursivity
-			schema[attrPos + <%= SCHEMA.attrSchema %>] =  @subschema if @subschema
+			# prototype method
+			if _owns this, 'protoMethod'
+				_defineProperty proto, attr, value: @protoMethod
+
+			else if @nestedObj
+				# will be compiled, just to avoid recursivity
+				throw new Error 'Illegal use of nested objects' unless @type is _ModelTypes.Object
+				# create object schema
+				# [schemaType, proto, extensible, ignoreJSON, ignoreParse, requiredAttributes, virtualAttributes, toJSON, toDB]
+				
+				objSchema = new Array <%= SCHEMA.sub %>
+				# objSchema[<%= SCHEMA.schemaType %>] = 1 # -1: means object not yeat compiled
+				# objSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
+				objSchema[<%= SCHEMA.extensible %>] = @extensible || off
+				delete @extensible
+
+				schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
 			return
 
 ###*
@@ -273,9 +312,85 @@ _defineDescriptor
  * .list({sub-schema})
  * .list(Model.Int)
  * .list(Model.list(...))
+ * .list(Number, {prototype methods})
+ * .list Number
+ * 		sort: function(cb){}
+ * 		length: Model.getter(...).setter(...)
 ###
 _defineDescriptor
 	fx:
-		list: (arg)->
-			<%= assertArgsLength(1) %>
-			@list = true
+		list: (arg, prototype)->
+			<%= assertArgsLength(1, 2) %>
+			throw new Error "Illegal use of list" if @nestedObj or @arrItem
+			# set type as array
+			@_.Array
+			# check prototype
+			proto = _create null
+			if arguments.length is 2
+				throw new Error "Illegal prototype" unless _isPlainObject prototype
+				for k,v of prototype
+					# getter/setter
+					if v and typeof v is 'object'
+						if v[DESCRIPTOR]
+							v = v[DESCRIPTOR]
+							# check for getter and setter only
+							throw new Error "Only 'getter' and 'setter' are accepted as list prototype attribute. [#{ek}] detected." unless ek in ['_', 'getter', 'setter'] for ek, ev of v
+							if v.getter or v.setter
+								_defineProperty proto, k,
+									get: v.getter
+									set: v.setter
+							else
+								throw new Error "getter or setter is required"
+						else
+							throw new Error "Illegal list prototype attribute: #{k}, use Model.getter(...) instead"
+					# reject types
+					else if v is Model or (ref = _ModelTypes[v.name] and ref.name is v)
+						throw new Error "Only methods, setters, getters are expected as list prototype property"
+					# method or static value
+					else
+						_defineProperty proto, k, value: v
+			_setPrototypeOf proto, _arrayProto
+			@arrProto = proto
+			# arg
+			# predefined type
+			if typeof arg is 'function'
+				throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
+				arg = Model[arg.name]
+			# nested list
+			else if Array.isArray arg
+				arg = _arrToModelList arg
+			else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
+				throw new Error "Illegal argument: #{arg}"
+			@arrItem = arg
+			return
+
+	compile: (attr, schema, proto, attrPos)->
+		if @arrItem
+			throw new Error 'Illegal use of nested Arrays' unless @type is _ModelTypes.Array
+
+			# create object schema
+			objSchema = new Array <%= SCHEMA.sub %>
+			objSchema[<%= SCHEMA.schemaType %>] = 2 # -2: means list not yeat compiled
+			objSchema[<%= SCHEMA.proto %>] = @arrProto
+			
+			# items
+			arrItem = @arrItem
+			tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
+			objSchema[<%= SCHEMA.listCheck %>] = tp.check
+			objSchema[<%= SCHEMA.listConvert %>] = tp.convert
+			# nested object or array
+			if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
+				objSchema[<%= SCHEMA.listSchema %>] = new Array <%= SCHEMA.sub %>
+			schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
+		return
+
+
+# convert data to Model list
+_arrToModelList= (attrV)->
+	switch attrV.length
+		when 1
+			Model.list attrV[0]
+		when 0
+			Model.list Model.Mixed
+		else
+			throw new Error "One type is expected for Array, #{attrV.length} are given."

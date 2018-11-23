@@ -2,7 +2,7 @@
 This template will help to simulate object format to symplify code
 
 -- nested objects
-	- isList: false
+	- schemaType: 1
 	- proto: {}
 	- ignoreJSON: [...]
 	- ignoreParse: [...]
@@ -12,7 +12,7 @@ This template will help to simulate object format to symplify code
 	- toJSON: [...]
 	- toDB: [...]
 -- nested list
-	- isList: true
+	- schemaType: 2
 	- proto: {}
 	- listType: list item type
 	- listCheck: fx (check all attributes)
@@ -21,19 +21,19 @@ This template will help to simulate object format to symplify code
 */
 
 var nestedObjSchema = [
-	'isList',		// is nested list or nested object
+	'schemaType',	// is nested list or nested object
 	'proto',		// schema prototype
+	'extensible',	// if the object could contains attributes other then specified ones
 	'ignoreJSON',	// list of attributes to be ignored when serializing as JSON
 	'ignoreParse',	// list of attributes to be ignored when parsing an object from JSON or any untrasted data source
 	'required',		// list of required attributes
 	'virtual',		// virtual attributes
-	'extensible',	// if the object could contains attributes other then specified ones
 
 	'toJSON',		// [attr, toJSONFx, ...] convert attributes
 	'toDB'			// [attr, toJSONFx, ...] convert attributes
 ];
 var nestedListSchema = [
-	'isList',		// is nested list or nested object
+	'schemaType',	// is nested list or nested object
 	'proto',		// schema prototype
 	'listType',		// list item type
 	'listCheck',	// fx: check list items basid on some type

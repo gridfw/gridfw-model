@@ -34,3 +34,7 @@ _owns = Reflect.ownKeys
 
 # Array
 _ArrayPush = Array::push
+
+
+# check
+_isPlainObject = (obj)-> obj and typeof obj is 'object' and not Array.isArray obj

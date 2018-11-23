@@ -1,9 +1,11 @@
 
 ### compile schema ###
-_compileSchema = (schema)->
+_compileSchema = (schema, errors)->
+	# prepare schema
+	throw new Error "Illegal argument" unless schema and typeof schema is 'object'
+	
 	# compiled schema, @see schema.template.js for more information
-	compiledSchema = []
-	compiledSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
+	compiledSchema = new Array <%= SCHEMA.attrPropertyCount %>
 	#  use queu instead of recursivity to prevent
 	#  stack overflow and increase performance
 	#  queu format: [shema, path, ...]
@@ -16,43 +18,86 @@ _compileSchema = (schema)->
 		compiledSchema	= seekQueue[++seekQueueIndex]
 		path			= seekQueue[++seekQueueIndex]
 		++seekQueueIndex
-		# prototype
-		proto = compiledSchema[<%= SCHEMA.proto %>]
-		# go through all attributes
-		for k,v in schema
-			# check if function
-			if typeof v is 'function'
-				# check if registred type
-				t = _ModelTypes[v.name]
-				if t and t.name is v
-					v= Model[v.name]
-				# if date.now, set it as default value
-				else if v is Date.now
-					v= Model.default v
-				# else add this function as prototype property
-				else
-					_defineProperty proto, k, value: v
-					continue
-			# if it is an array of objects
-			else if Array.isArray v
-				switch v.length
-					when 1
-						v = Model.list v[0]
-					when 0
-						v = Model.list()
-					else
-						throw new Error "One type is expected for Array, #{v.length} are given at #{path.join '.'}"
-			# nested object
-			else if typeof v is 'object'
-				v = Model.value v unless _owns v, DESCRIPTOR
-			else
-				throw new Error "Illegal descriptor at: #{path.join '.'}"
-			# get descriptor
-			v =v[DESCRIPTOR]
-			# do operations on prototype
-			v.initPrototype proto
-			# insert into current compiled schema
-			v.pushSchema k, compiledSchema
-				
+		# compile
+		_compileNested schema, compiledSchema, path, seekQueue, errors
+	# compiled schema
+	return compiledSchema	
 			
+###*
+ * Compile nested object or array
+###
+# 
+_compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
+	# convert to descriptor
+	nestedObj = Model.value nestedObj unless _owns schema, DESCRIPTOR
+	# create compiled schema
+	nestedDescriptor = nestedObj[DESCRIPTOR]
+	
+	if nestedDescriptor.type is _ModelTypes.Object
+		_compileNestedObject nestedDescriptor, compiledSchema, path, seekQueue, errors
+	else if nestedDescriptor.type is _ModelTypes.Array
+		_compileNestedArray nestedDescriptor, compiledSchema, path, seekQueue, errors
+	else
+		throw new Error "Schema could be Object or Array only!"
+###*
+ * Compile nested object
+###
+_compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
+	compiledSchema[<%= SCHEMA.schemaType %>] = 1 # uncompiled object
+	proto = compiledSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
+	# go through object attributes
+	attrPos = <%= SCHEMA.sub %>
+	for attrV,attrN in nestedDescriptor.subschema
+		try
+			# check not Model
+			throw new Error "Illegal use of Model" if attrV is Model
+			# convert to descriptor
+			attrV = Model.value attrV unless _owns attrV, DESCRIPTOR
+			# get descriptor
+			attrV =attrV[DESCRIPTOR]
+			compiledSchema[attrPos] = attrN
+			# compile: (attr, schema, proto, attrPos)
+			for comp in _descriptorCompilers
+				comp.call attrV, attrN, compiledSchema, proto, attrPos
+			# check for illegal use of "extensible"
+			throw new Error 'Illegal use of "extensible" keyword' if attrV.extensible
+			# next schema
+			nxtSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
+			if nxtSchema
+				# nested object
+				if nxtSchema[<%= SCHEMA.schemaType %>] is 1
+					throw new Error 'Nested obj required' unless attrV.nestedObj
+					seekQueue.push nxtSchema, attrV.nestedObj, path.join attrN
+				# nested array
+				else if nxtSchema[<%= SCHEMA.schemaType %>] is 2
+					arrSchem = nxtSchema[<%= SCHEMA.listSchema %>]
+					if arrSchem
+						throw new Error 'Nested obj required' unless attrV.arrItem
+						seekQueue.push arrSchem, attrV.arrItem, path.join attrN, '*'
+				# unknown
+				else
+					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"
+			# next attr position
+			attrPos += <%= SCHEMA.attrPropertyCount %>
+		catch err
+			errors.push
+				path: path.join attrN
+				error: err
+###*
+ * Compile nested array
+###
+_compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
+	throw new 'Inexpected array schema' unless _owns nestedDescriptor, 'arrItem'
+	compiledSchema[<%= SCHEMA.schemaType %>] = 2 # uncompiled Array
+	compiledSchema[<%= SCHEMA.proto %>] = nestedDescriptor.arrProto
+	# item
+	arrItem = @arrItem
+	tp = compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
+	compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
+	compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
+	# nested object or array
+	if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
+		arrSchem = compiledSchema[<%= SCHEMA.listSchema %>] = new Array <%= SCHEMA.sub %>
+		seekQueue.push arrSchem, arrItem.arrItem || arrItem.nestedObj, path.join '*'
+	return
 
