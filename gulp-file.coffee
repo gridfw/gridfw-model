@@ -10,7 +10,7 @@ template		= require 'gulp-template'
 pug				= require 'gulp-pug'
 through 		= require 'through2'
 path			= require 'path'
-PKG				= require 'package.json'
+PKG				= require './package.json'
 
 # check arguments
 SUPPORTED_MODES = ['node', 'browser']
@@ -18,19 +18,38 @@ settings = gutil.env
 throw new Error '"--mode=node" or "--mode=browser" argument is required' unless settings.mode
 throw new Error "Unsupported mode: #{settings.mode}, supported are #{SUPPORTED_MODES.join ','}." unless settings.mode in SUPPORTED_MODES
 
+# dest file name
+if settings.mode is 'node'
+	destFileName = PKG.main.split('/')[1]
+else
+	destFileName = "grid-model-nav-#{PKG.version}.js"
+
 # compile js (background, popup, ...)
 compileCoffee = ->
 	gulp.src "assets/index.coffee"
 		.pipe include hardFail: true
 		.pipe template settings
-		.pipe coffeescript(bare: true).on 'error', errorHandler
-		.pipe rename "grid-model-#{settings.mode}-#{PKG.version}.js"
 		.pipe gulp.dest "build"
+		
+		.pipe coffeescript(bare: true).on 'error', errorHandler
+		.pipe rename destFileName
+		.pipe gulp.dest "build"
+		.on 'error', errorHandler
+
+compileTests = ->
+	gulp.src "test-assets/*.coffee"
+		.pipe include hardFail: true
+		# .pipe template settings
+		# .pipe gulp.dest "test-build"
+		
+		.pipe coffeescript(bare: true).on 'error', errorHandler
+		.pipe gulp.dest "test-build"
 		.on 'error', errorHandler
 
 # compile
 watch = ->
 	gulp.watch 'assets/**/*.coffee', compileCoffee
+	gulp.watch 'test-assets/**/*.coffee', compileTests
 	return
 
 # error handler
@@ -62,5 +81,5 @@ errorHandler= (err)->
 	return
 
 # create default task
-gulp.task 'default', gulp.series compileCoffee, watch
+gulp.task 'default', gulp.series compileCoffee, compileTests, watch
 

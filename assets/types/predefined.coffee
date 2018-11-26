@@ -128,7 +128,7 @@ Model
  * Set
 ###
 .type
-	name	: set
+	name	: Set
 	check	: (data) -> data instanceof Set
 	convert	: (data) ->
 		throw new Error "Invalid Set: #{data}" unless Array.isArray data
@@ -174,7 +174,7 @@ Model
 			check: _checkIsNumber
 			assert: (data, max)-> throw new Error "String exceeds #{max}" if data.length > max
 		length:
-			check _checkIsNumber
+			check: _checkIsNumber
 			assert: (data, len)-> throw new Error "String length [#{data.length}] expected #{len}" if data.length isnt len
 		# match regex
 		match:
@@ -224,9 +224,9 @@ Model
  * Image URL
 ###
 .type
-	name: 'Image'
-	extends: URL
-	assert
+	name	: 'Image'
+	extends	: URL
+	assert	:
 		max: DATA_URL_MEX_LENGTH
 ###*
  * HTML
@@ -286,5 +286,5 @@ Model
  * Mixed
 ###
 .type
-	name	: Mixed
+	name	: 'Mixed'
 	check	: -> true

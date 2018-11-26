@@ -13,7 +13,7 @@ _ModelTypes = Object.create null
  * @optional @param {function} options.toJSON - returns value of JSON representation
  * @optional @param {function} opitons.toDB - returns value to be stored on the database
 ###
-_define 'type', (options)->
+_defineProperty Model, 'type', value:(options)->
 	throw new Error 'Illegal Arguments' if arguments.length isnt 1 or typeof options isnt 'object' or not options
 	throw new Error 'Type name is required' unless options.name
 
@@ -21,7 +21,7 @@ _define 'type', (options)->
 	typeKey = name = options.name
 	name = name.name if typeof name is 'function'
 	throw new Error "Illegal name: #{options.name}" unless typeof name is 'string'
-	throw new Error "Invalid type name: #{name}. must match ^[A-Z][a-zA-Z0-9_-]$" unless /^[A-Z][a-zA-Z0-9_-]$/.test name
+	throw new Error "Invalid type name: #{name}. must match ^[A-Z][a-zA-Z0-9_-]+$" unless /^[A-Z][a-zA-Z0-9_-]+$/.test name
 
 	# get name
 	typeDef = _ModelTypes[name]
@@ -29,9 +29,22 @@ _define 'type', (options)->
 		# throw error if two different functions with some name
 		throw new Error "Function with same name [#{name}] already set. Please choose functions with different names" unless typeDef.name is typeKey
 	else # new type
-		throw new Error "Option [check] is required function" unless typeof options.check is 'function'
-		throw new Error "[#{name}] is a reserved name" if typeDef of Model
-		typeDef = _ModelTypes[name] = _create null
+		# extends
+		if 'extends' of options
+			ext = options.extends
+			if typeof ext is 'function'
+				ext = ext.name 
+			else unless typeof ext is 'string'
+				throw new Error "Illegal extend"
+			typeDef = _ModelTypes[ext]
+			throw new Error "Could not found parent type: #{ext}" unless typeDef
+			typeDef = _clone typeDef
+		else
+			typeDef = _create null
+		_ModelTypes[name] = typeDef
+		# check
+		throw new Error "Option [check] is required function" unless (typeof options.check is 'function') or ('check' of typeDef)
+		throw new Error "[#{name}] is a reserved name" if name of Model
 		# define descriptor
 		_defineDescriptor
 			get:

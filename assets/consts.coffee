@@ -29,7 +29,8 @@ _create = Object.create
 _setPrototypeOf= Object.setPrototypeOf
 _defineProperties= Object.defineProperties
 _defineProperty= Object.defineProperty
-_owns = Reflect.ownKeys
+_has = Reflect.has
+_owns= (obj, property)-> Object.hasOwnProperty.call obj, property
 
 
 # Array
@@ -38,3 +39,20 @@ _ArrayPush = Array::push
 
 # check
 _isPlainObject = (obj)-> obj and typeof obj is 'object' and not Array.isArray obj
+
+# clone
+_clone = (obj)-> Object.assign {}, obj
+
+# json pretty
+_jsonPretty = (obj)->
+	_prettyJSON = (k,v) ->
+		if typeof v is 'function'
+			v= "[FUNCTION #{v.name}]"
+		else if typeof v is 'symbol'
+			v= "[SYMBOL #{v}]"
+		else if v instanceof Error
+			v =
+				message: v.message
+				stack: v.stack.split("\n")[0..2]
+		v
+	JSON.stringify obj, _prettyJSON, "\t"

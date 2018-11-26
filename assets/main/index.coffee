@@ -16,7 +16,7 @@
 # 		throw new Error "Illegal arguments"
 # 	return instance
 # prototype
-ModelPrototype = Model.prototype
+ModelPrototype = _create null
 # static protoperties
 ModelStatics = _create null
 ### Add symbols ###
@@ -26,4 +26,5 @@ _defineProperties Model,
 
 
 #=include basic-proto.coffee
+#=include from-schema.coffee
 #=include instance-from.coffee

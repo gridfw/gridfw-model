@@ -6,7 +6,7 @@ ModelRegistry = _create null
 ###*
  * Get registred Model
 ###
-_define 'get', (modelName)-> ModelRegistry[modelName]
+_defineProperty Model, 'get', value: (modelName)-> ModelRegistry[modelName]
 
 ###*
  * Create new Model from schema
@@ -16,19 +16,20 @@ _define 'get', (modelName)-> ModelRegistry[modelName]
  * @optional @param {boolean} options.setters - create setters (.setAttr -> .attr) @default true
  * @optional @param {boolean} options.getters - create getters (.getAttr -> .attr) @default false
 ###
-_define 'from', (options)->
+_defineProperty Model, 'from', value: (options)->
 	throw new Error "Illegal arguments" unless arguments.length is 1 and typeof options is 'object' and options
 
 	# check the name of the model
-	throw new Error "options.name expected string" unless typeof options.name is 'string'
+	throw new Error "Model name is required" unless 'name' of options
+	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
-	throw new Error "Model alreay set: #{modelName}" if ModelRegistry[modelName]
+	throw new Error "Model alreay set: #{modelName}" if modelName of ModelRegistry
 
 	# check and compile schema
 	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
 	errors = []
 	schema = _compileSchema options.schema,errors
-	throw new Error "Schema contains #{errors.length} errors.\n #{JSON.stringify errors, null, ' '}" if errors.length
+	throw new Error "Schema contains #{errors.length} errors.\n #{_jsonPretty errors}" if errors.length
 
 	# Create Model
 	# Use Model.fromJSON or Model.fromDB to performe recusive convertion

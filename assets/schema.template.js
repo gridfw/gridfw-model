@@ -47,11 +47,11 @@ var schemaAttrDescrptr =[
 	'attrConvert',	// convert attribute type
 	'attrAsserts',	// list of assertions
 	'attrPipe',		// list of pipe functions
-	'attrSchema',	// sub-schema
+	'attrSchema'	// sub-schema
 ];
 
 // create schema info
-var SCHEMA = Object.create null;
+var SCHEMA = Object.create(null);
 for(var len = nestedObjSchema.length, i= 0; i< len; ++i){
 	k = nestedObjSchema[i];
 	SCHEMA[k] = i

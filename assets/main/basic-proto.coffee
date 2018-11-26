@@ -5,7 +5,7 @@ _arrayProto = _create Array.prototype,
 	push: value: ->
 		values = Array.from arguments
 		# convert all types
-		for value in values
+		# for value in values
 
 		# push
 		_ArrayPush.apply this, values

@@ -1,27 +1,32 @@
-###*
- * Model
-###
-#=include consts.coffee
+do ->
+	###*
+	 * Model
+	###
+	#=include consts.coffee
 
-_schemaDescriptor = _create null
-Model = _create _schemaDescriptor
+	_schemaDescriptor = _create null
+	Model = _create _schemaDescriptor
 
+	# basic error log
+	Model.logError = console.error.bind console
 
-<%
-#=include template-defines.js
-%>
+	<%
+	#=include template-defines.js
+	#=include schema.template.js
+	%>
 
-###*
- * Define Model properties
-###
-_define = (name, value)-> Object.defineProperty Model, name, value: value
-_defineGetter = (name, value)-> Object.defineProperty Model, name, get: value
+	# main
+	#=include main/index.coffee
 
-# main
-#=include main/index.coffee
+	# schema
+	#=include schema/index.coffee
 
-# schema
-#=include schema/index.coffee
+	# Types
+	#=include types/index.coffee
 
-# Types
-#=include types/index.coffee
+	# interface
+	<% if(mode === 'node'){ %>
+	module.exports = Model
+	<% } else { %>
+	window.Model = Model
+	<% } %>

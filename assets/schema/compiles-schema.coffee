@@ -29,7 +29,7 @@ _compileSchema = (schema, errors)->
 # 
 _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
 	# convert to descriptor
-	nestedObj = Model.value nestedObj unless _owns schema, DESCRIPTOR
+	nestedObj = Model.value nestedObj unless _owns nestedObj, DESCRIPTOR
 	# create compiled schema
 	nestedDescriptor = nestedObj[DESCRIPTOR]
 	
@@ -47,7 +47,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	proto = compiledSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
 	# go through object attributes
 	attrPos = <%= SCHEMA.sub %>
-	for attrV,attrN in nestedDescriptor.subschema
+	for attrN, attrV of nestedDescriptor.nestedObj
 		try
 			# check not Model
 			throw new Error "Illegal use of Model" if attrV is Model
@@ -62,7 +62,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			# check for illegal use of "extensible"
 			throw new Error 'Illegal use of "extensible" keyword' if attrV.extensible
 			# next schema
-			nxtSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
+			nxtSchema = compiledSchema[attrPos + <%= SCHEMA.attrSchema %>]
 			if nxtSchema
 				# nested object
 				if nxtSchema[<%= SCHEMA.schemaType %>] is 1

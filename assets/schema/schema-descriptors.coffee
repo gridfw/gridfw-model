@@ -13,7 +13,7 @@ _defineDescriptor= (options)->
 			_defineProperty _schemaDescriptor, k, get: _defineDescriptorWrapper v
 	# functions
 	if 'fx' of options
-		for k,v of options.get
+		for k,v of options.fx
 			_defineProperty _schemaDescriptor, k, value: _defineDescriptorWrapper v
 	# compile
 	if 'compile' of options

@@ -188,7 +188,7 @@ _defineDescriptor
 			return
 	compile: (attr, schema, proto, attrPos)->
 		# add basic asserts
-		if _owns this, assertObj
+		if _owns this, 'assertObj'
 			# get type
 			type = @type
 			throw new Error "No type specified to use predefined assertions. Use assert(function(data){}) instead" unless type
@@ -276,6 +276,7 @@ _defineDescriptor
 			# nested object
 			else if typeof arg is 'object'
 				unless _owns arg, DESCRIPTOR
+					@_.Object
 					@nestedObj = arg
 					return
 			else

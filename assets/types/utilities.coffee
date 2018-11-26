@@ -2,8 +2,8 @@
  * convert Map to Object
 ###
 _Map2Obj = (data)->
-	value = Object.create null
-	for k,v if data
+	value = _create null
+	for k,v of data
 		if typeof k is 'number'
 			value[k] = v
 		else if typeof k is 'string'
