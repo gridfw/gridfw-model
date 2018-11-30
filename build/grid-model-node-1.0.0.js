@@ -571,11 +571,13 @@ var indexOf = [].indexOf;
     },
     compile: function(attr, schema, proto) {
       var virtualAttr;
-      virtualAttr = schema[6];
-      if (virtualAttr) {
-        virtualAttr.push(attr);
-      } else {
-        virtualAttr = schema[6] = [attr];
+      if (this.virtual) {
+        virtualAttr = schema[6];
+        if (virtualAttr) {
+          virtualAttr.push(attr);
+        } else {
+          virtualAttr = schema[6] = [attr];
+        }
       }
     }
   });
@@ -1308,6 +1310,7 @@ var indexOf = [].indexOf;
           typeDef = _create(null);
         }
         _ModelTypes[name] = typeDef;
+        typeDef.name = typeKey;
         if (!((typeof options.check === 'function') || ('check' in typeDef))) {
           // check
           throw new Error("Option [check] is required function");
@@ -1878,6 +1881,15 @@ var indexOf = [].indexOf;
     }
   });
   
+  // property name error notifier
+  _setPrototypeOf(_schemaDescriptor, new Proxy({}, {
+    get: function(obj, attr) {
+      throw new Error(`Unknown Model property: ${attr}`);
+    },
+    set: function(obj, attr, value) {
+      throw new Error(`Unknown Model property: ${attr}`);
+    }
+  }));
   // interface
   return module.exports = Model;
 })();

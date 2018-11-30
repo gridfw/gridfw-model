@@ -14,6 +14,8 @@ User = Model.from({
     fullName: Model.getter(function() {
       return `${this.firstName} ${this.lastName}`;
     }),
+    class: Model.Int.required.jsonIgnore,
+    website: Model.String.required,
     toString: function() {
       return "User [@fullName]";
     }
@@ -21,9 +23,7 @@ User = Model.from({
 });
 
 // user1 = User.fromJSON {}
-console.log("typeof User>>", typeof User);
-
-console.log("typeof User>>", User[Model.SCHEMA]);
+console.log("User schema>>", User[Model.SCHEMA]);
 
 // console.log "User1>>", user1.__proto__
 console.log('---- end test');

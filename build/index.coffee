@@ -60,7 +60,6 @@ do ->
 					stack: v.stack.split("\n")[0..2]
 			v
 		JSON.stringify obj, _prettyJSON, "\t"
-
 	_schemaDescriptor = _create null
 	Model = _create _schemaDescriptor
 
@@ -446,13 +445,14 @@ do ->
 			transient: -> @virtual = on
 			persist: -> @virtual = off
 		compile: (attr, schema, proto)->
-			virtualAttr = schema[6]
-			if virtualAttr
-				virtualAttr.push attr
-			else
-				virtualAttr = schema[6] = [attr]
-				# implemented for each db engine
-				# _defineProperties proto, toDB: -> _toJSONCleaner this, virtualAttr
+			if @virtual
+				virtualAttr = schema[6]
+				if virtualAttr
+					virtualAttr.push attr
+				else
+					virtualAttr = schema[6] = [attr]
+					# implemented for each db engine
+					# _defineProperties proto, toDB: -> _toJSONCleaner this, virtualAttr
 			return
 	
 	###*
@@ -999,6 +999,7 @@ do ->
 			else
 				typeDef = _create null
 			_ModelTypes[name] = typeDef
+			typeDef.name = typeKey
 			# check
 			throw new Error "Option [check] is required function" unless (typeof options.check is 'function') or ('check' of typeDef)
 			throw new Error "[#{name}] is a reserved name" if name of Model
@@ -1325,6 +1326,11 @@ do ->
 		name	: 'Mixed'
 		check	: -> true
 	
+	
+	# property name error notifier
+	_setPrototypeOf _schemaDescriptor, new Proxy {},
+		get: (obj, attr) -> throw new Error "Unknown Model property: #{attr}"
+		set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr}"
 
 	# interface
 	

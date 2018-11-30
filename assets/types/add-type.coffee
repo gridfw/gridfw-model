@@ -42,6 +42,7 @@ _defineProperty Model, 'type', value:(options)->
 		else
 			typeDef = _create null
 		_ModelTypes[name] = typeDef
+		typeDef.name = typeKey
 		# check
 		throw new Error "Option [check] is required function" unless (typeof options.check is 'function') or ('check' of typeDef)
 		throw new Error "[#{name}] is a reserved name" if name of Model

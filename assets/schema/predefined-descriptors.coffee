@@ -41,13 +41,14 @@ _defineDescriptor
 		transient: -> @virtual = on
 		persist: -> @virtual = off
 	compile: (attr, schema, proto)->
-		virtualAttr = schema[<%= SCHEMA.virtual %>]
-		if virtualAttr
-			virtualAttr.push attr
-		else
-			virtualAttr = schema[<%= SCHEMA.virtual %>] = [attr]
-			# implemented for each db engine
-			# _defineProperties proto, toDB: -> _toJSONCleaner this, virtualAttr
+		if @virtual
+			virtualAttr = schema[<%= SCHEMA.virtual %>]
+			if virtualAttr
+				virtualAttr.push attr
+			else
+				virtualAttr = schema[<%= SCHEMA.virtual %>] = [attr]
+				# implemented for each db engine
+				# _defineProperties proto, toDB: -> _toJSONCleaner this, virtualAttr
 		return
 
 ###*
