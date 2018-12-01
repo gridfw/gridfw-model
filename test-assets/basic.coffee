@@ -14,6 +14,17 @@ User = Model.from
 		class: Model.Int.required.jsonIgnore
 		website: Model.String.required
 		toString: -> "User [@fullName]"
+		hobies:[
+			title: String
+			score:
+				max: Number
+				avg: Model.Unsigned.required
+				doBa: ->
+					console.log 'baba'
+				def: Model.Hex.default -> 'a45f'
+			validated: Boolean
+
+		]
 
 
 # user1 = User.fromJSON {}

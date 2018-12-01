@@ -22,7 +22,8 @@ _defineDescriptor= (options)->
 ### wrapper ###
 _defaultDescriptor = ->
 	# create descriptor
-	desc = _create null
+	desc = _create null,
+		_pipe: value: []
 	# return schema descriptor
 	obj = _create _schemaDescriptor,
 		[DESCRIPTOR]: value: desc
@@ -32,7 +33,19 @@ _defineDescriptorWrapper = (fx) ->
 	->
 		desc = if this is Model then _defaultDescriptor() else this
 		# exec fx
-		fx.apply desc[DESCRIPTOR], arguments
+		dsrp = desc[DESCRIPTOR]
+		fx.apply dsrp, arguments
+		# save representation for debug purpose
+		if arguments.length
+			nm = """#{fx.name}(#{Array.from(arguments).map((e)->
+				if typeof e is 'function'
+					"[FUNCTION #{e.name||'Unnamed'}]"
+				else
+					e?.toString?() || typeof e
+			).join ', '})"""
+		else
+			nm = fx.name
+		dsrp._pipe.push nm
 		# chain
 		desc
 

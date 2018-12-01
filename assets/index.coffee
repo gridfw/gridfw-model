@@ -23,10 +23,18 @@ do ->
 	# Types
 	#=include types/index.coffee
 	
+	# schema inspector for debuging
+	_modelDescriptorToString = value: -> "Model.#{@[DESCRIPTOR]._pipe.join '.'}"
+	_defineProperties _schemaDescriptor,
+		constructor: value: undefined
+		inspect: _modelDescriptorToString
+		toString: _modelDescriptorToString
+		# toString: value: -> 'MODEL_DESCRIPTOR'
 	# property name error notifier
 	_setPrototypeOf _schemaDescriptor, new Proxy {},
-		get: (obj, attr) -> throw new Error "Unknown Model property: #{attr}"
-		set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr}"
+		get: (obj, attr) ->
+			throw new Error "Unknown Model property: #{attr?.toString?()}" unless typeof attr is 'symbol'
+		set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr?.toString?()}"
 
 	# interface
 	<% if(mode === 'node'){ %>

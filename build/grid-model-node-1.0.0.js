@@ -45,7 +45,7 @@ var indexOf = [].indexOf;
    */
   /* Common plain object prototype */
   /* JSON cleaner */
-  var DATA_URL_MEX_LENGTH, DESCRIPTOR, EMAIL_CHECK, HEX_CHECK, HTML_MAX_LENGTH, Model, ModelPrototype, ModelRegistry, ModelStatics, PASSWD_MAX, PASSWD_MIN, SCHEMA, SCHEMA_COUNT, STRING_MAX, TYPE_ATTR, URL_MAX_LENGTH, _ArrayPush, _Map2Obj, _ModelTypes, _Set2Array, _arrToModelList, _arrayProto, _checkIsNumber, _clone, _compileNested, _compileNestedArray, _compileNestedObject, _compileSchema, _create, _defaultDescriptor, _defineDescriptor, _defineDescriptorWrapper, _defineProperties, _defineProperty, _descriptorCompilers, _fastInstanceConvert, _has, _instanceConvert, _isPlainObject, _jsonPretty, _owns, _plainObjPrototype, _schemaDescriptor, _setPrototypeOf, _toJSONCleaner;
+  var DATA_URL_MEX_LENGTH, DESCRIPTOR, EMAIL_CHECK, HEX_CHECK, HTML_MAX_LENGTH, Model, ModelPrototype, ModelRegistry, ModelStatics, PASSWD_MAX, PASSWD_MIN, SCHEMA, SCHEMA_COUNT, STRING_MAX, TYPE_ATTR, URL_MAX_LENGTH, _ArrayPush, _Map2Obj, _ModelTypes, _Set2Array, _arrToModelList, _arrayProto, _checkIsNumber, _clone, _compileNested, _compileNestedArray, _compileNestedObject, _compileSchema, _create, _defaultDescriptor, _defineDescriptor, _defineDescriptorWrapper, _defineProperties, _defineProperty, _descriptorCompilers, _fastInstanceConvert, _has, _instanceConvert, _isPlainObject, _jsonPretty, _modelDescriptorToString, _owns, _plainObjPrototype, _schemaDescriptor, _setPrototypeOf, _toJSONCleaner;
   /**
    * Model
    */
@@ -478,7 +478,11 @@ var indexOf = [].indexOf;
   _defaultDescriptor = function() {
     var desc, obj;
     // create descriptor
-    desc = _create(null);
+    desc = _create(null, {
+      _pipe: {
+        value: []
+      }
+    });
     // return schema descriptor
     obj = _create(_schemaDescriptor, {
       [DESCRIPTOR]: {
@@ -490,10 +494,24 @@ var indexOf = [].indexOf;
   };
   _defineDescriptorWrapper = function(fx) {
     return function() {
-      var desc;
+      var desc, dsrp, nm;
       desc = this === Model ? _defaultDescriptor() : this;
       // exec fx
-      fx.apply(desc[DESCRIPTOR], arguments);
+      dsrp = desc[DESCRIPTOR];
+      fx.apply(dsrp, arguments);
+      // save representation for debug purpose
+      if (arguments.length) {
+        nm = `${fx.name}(${Array.from(arguments).map(function(e) {
+          if (typeof e === 'function') {
+            return `[FUNCTION ${e.name || 'Unnamed'}]`;
+          } else {
+            return (e != null ? typeof e.toString === "function" ? e.toString() : void 0 : void 0) || typeof e;
+          }
+        }).join(', ')})`;
+      } else {
+        nm = fx.name;
+      }
+      dsrp._pipe.push(nm);
       // chain
       return desc;
     };
@@ -975,7 +993,8 @@ var indexOf = [].indexOf;
   _defineDescriptor({
     fx: {
       list: function(arg, prototype) {
-        var ek, ev, k, proto, ref, ref1, t, v;
+        var ek, ev, k, proto, ref, ref1, v;
+        console.log('----', arg);
         if ((ref1 = arguments.length) !== 1 && ref1 !== 2) {
           throw new Error("Illegal arguments");
         }
@@ -1032,20 +1051,18 @@ var indexOf = [].indexOf;
         }
         _setPrototypeOf(proto, _arrayProto);
         this.arrProto = proto;
-        // arg
-        // predefined type
-        if (typeof arg === 'function') {
-          if (!((t = _ModelTypes[arg.name]) && t.name === arg)) {
-            throw new Error('Illegal argument');
-          }
-          arg = Model[arg.name];
-        // nested list
-        } else if (Array.isArray(arg)) {
-          arg = _arrToModelList(arg);
-        } else if (!(arg && typeof arg === 'object' && _owns(arg, DESCRIPTOR))) {
-          throw new Error(`Illegal argument: ${arg}`);
-        }
-        this.arrItem = arg;
+        // # arg
+        // # predefined type
+        // if typeof arg is 'function'
+        // 	throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
+        // 	arg = Model[arg.name]
+        // # nested list
+        // else if Array.isArray arg
+        // 	arg = _arrToModelList arg
+        // else if typeof arg is 'object' and 
+        // else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
+        // 	throw new Error "Illegal argument: #{arg}"
+        this.arrItem = Model.value(arg);
       }
     },
     compile: function(attr, schema, proto, attrPos) {
@@ -1881,13 +1898,29 @@ var indexOf = [].indexOf;
     }
   });
   
+  // schema inspector for debuging
+  _modelDescriptorToString = {
+    value: function() {
+      return `Model.${this[DESCRIPTOR]._pipe.join('.')}`;
+    }
+  };
+  _defineProperties(_schemaDescriptor, {
+    constructor: {
+      value: void 0
+    },
+    inspect: _modelDescriptorToString,
+    toString: _modelDescriptorToString
+  });
+  // toString: value: -> 'MODEL_DESCRIPTOR'
   // property name error notifier
   _setPrototypeOf(_schemaDescriptor, new Proxy({}, {
     get: function(obj, attr) {
-      throw new Error(`Unknown Model property: ${attr}`);
+      if (typeof attr !== 'symbol') {
+        throw new Error(`Unknown Model property: ${attr != null ? typeof attr.toString === "function" ? attr.toString() : void 0 : void 0}`);
+      }
     },
     set: function(obj, attr, value) {
-      throw new Error(`Unknown Model property: ${attr}`);
+      throw new Error(`Unknown Model property: ${attr != null ? typeof attr.toString === "function" ? attr.toString() : void 0 : void 0}`);
     }
   }));
   // interface

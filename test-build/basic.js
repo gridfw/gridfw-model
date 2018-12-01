@@ -18,7 +18,23 @@ User = Model.from({
     website: Model.String.required,
     toString: function() {
       return "User [@fullName]";
-    }
+    },
+    hobies: [
+      {
+        title: String,
+        score: {
+          max: Number,
+          avg: Model.Unsigned.required,
+          doBa: function() {
+            return console.log('baba');
+          },
+          def: Model.Hex.default(function() {
+            return 'a45f';
+          })
+        },
+        validated: Boolean
+      }
+    ]
   }
 });
 

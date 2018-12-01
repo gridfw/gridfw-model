@@ -322,6 +322,7 @@ _defineDescriptor
 _defineDescriptor
 	fx:
 		list: (arg, prototype)->
+			console.log '----', arg
 			<%= assertArgsLength(1, 2) %>
 			throw new Error "Illegal use of list" if @nestedObj or @arrItem
 			# set type as array
@@ -353,17 +354,18 @@ _defineDescriptor
 						_defineProperty proto, k, value: v
 			_setPrototypeOf proto, _arrayProto
 			@arrProto = proto
-			# arg
-			# predefined type
-			if typeof arg is 'function'
-				throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
-				arg = Model[arg.name]
-			# nested list
-			else if Array.isArray arg
-				arg = _arrToModelList arg
-			else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
-				throw new Error "Illegal argument: #{arg}"
-			@arrItem = arg
+			# # arg
+			# # predefined type
+			# if typeof arg is 'function'
+			# 	throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
+			# 	arg = Model[arg.name]
+			# # nested list
+			# else if Array.isArray arg
+			# 	arg = _arrToModelList arg
+			# else if typeof arg is 'object' and 
+			# else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
+			# 	throw new Error "Illegal argument: #{arg}"
+			@arrItem = Model.value arg
 			return
 
 	compile: (attr, schema, proto, attrPos)->

@@ -387,7 +387,8 @@ do ->
 	### wrapper ###
 	_defaultDescriptor = ->
 		# create descriptor
-		desc = _create null
+		desc = _create null,
+			_pipe: value: []
 		# return schema descriptor
 		obj = _create _schemaDescriptor,
 			[DESCRIPTOR]: value: desc
@@ -397,7 +398,19 @@ do ->
 		->
 			desc = if this is Model then _defaultDescriptor() else this
 			# exec fx
-			fx.apply desc[DESCRIPTOR], arguments
+			dsrp = desc[DESCRIPTOR]
+			fx.apply dsrp, arguments
+			# save representation for debug purpose
+			if arguments.length
+				nm = """#{fx.name}(#{Array.from(arguments).map((e)->
+					if typeof e is 'function'
+						"[FUNCTION #{e.name||'Unnamed'}]"
+					else
+						e?.toString?() || typeof e
+				).join ', '})"""
+			else
+				nm = fx.name
+			dsrp._pipe.push nm
 			# chain
 			desc
 	
@@ -726,6 +739,7 @@ do ->
 	_defineDescriptor
 		fx:
 			list: (arg, prototype)->
+				console.log '----', arg
 				throw new Error "Illegal arguments" unless arguments.length in [1,2]
 				throw new Error "Illegal use of list" if @nestedObj or @arrItem
 				# set type as array
@@ -757,17 +771,18 @@ do ->
 							_defineProperty proto, k, value: v
 				_setPrototypeOf proto, _arrayProto
 				@arrProto = proto
-				# arg
-				# predefined type
-				if typeof arg is 'function'
-					throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
-					arg = Model[arg.name]
-				# nested list
-				else if Array.isArray arg
-					arg = _arrToModelList arg
-				else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
-					throw new Error "Illegal argument: #{arg}"
-				@arrItem = arg
+				# # arg
+				# # predefined type
+				# if typeof arg is 'function'
+				# 	throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
+				# 	arg = Model[arg.name]
+				# # nested list
+				# else if Array.isArray arg
+				# 	arg = _arrToModelList arg
+				# else if typeof arg is 'object' and 
+				# else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
+				# 	throw new Error "Illegal argument: #{arg}"
+				@arrItem = Model.value arg
 				return
 	
 		compile: (attr, schema, proto, attrPos)->
@@ -1327,10 +1342,18 @@ do ->
 		check	: -> true
 	
 	
+	# schema inspector for debuging
+	_modelDescriptorToString = value: -> "Model.#{@[DESCRIPTOR]._pipe.join '.'}"
+	_defineProperties _schemaDescriptor,
+		constructor: value: undefined
+		inspect: _modelDescriptorToString
+		toString: _modelDescriptorToString
+		# toString: value: -> 'MODEL_DESCRIPTOR'
 	# property name error notifier
 	_setPrototypeOf _schemaDescriptor, new Proxy {},
-		get: (obj, attr) -> throw new Error "Unknown Model property: #{attr}"
-		set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr}"
+		get: (obj, attr) ->
+			throw new Error "Unknown Model property: #{attr?.toString?()}" unless typeof attr is 'symbol'
+		set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr?.toString?()}"
 
 	# interface
 	
