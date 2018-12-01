@@ -322,7 +322,6 @@ _defineDescriptor
 _defineDescriptor
 	fx:
 		list: (arg, prototype)->
-			console.log '----', arg
 			<%= assertArgsLength(1, 2) %>
 			throw new Error "Illegal use of list" if @nestedObj or @arrItem
 			# set type as array
@@ -378,7 +377,7 @@ _defineDescriptor
 			objSchema[<%= SCHEMA.proto %>] = @arrProto
 			
 			# items
-			arrItem = @arrItem
+			arrItem = @arrItem[DESCRIPTOR]
 			tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
 			objSchema[<%= SCHEMA.listCheck %>] = tp.check
 			objSchema[<%= SCHEMA.listConvert %>] = tp.convert
