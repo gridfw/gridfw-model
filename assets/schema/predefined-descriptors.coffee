@@ -65,6 +65,7 @@ _defineDescriptor
 
 ###*
  * Set an object as freezed or extensible
+ * @default freezed
 ###
 _defineDescriptor
 	get:
@@ -287,25 +288,25 @@ _defineDescriptor
 			for k,v of arg
 				@[k] = v
 			return
-		compile: (attr, schema, proto, attrPos)->
-			# prototype method
-			if _owns this, 'protoMethod'
-				_defineProperty proto, attr, value: @protoMethod
+	compile: (attr, schema, proto, attrPos)->
+		# prototype method
+		if _owns this, 'protoMethod'
+			_defineProperty proto, attr, value: @protoMethod
 
-			else if @nestedObj
-				# will be compiled, just to avoid recursivity
-				throw new Error 'Illegal use of nested objects' unless @type is _ModelTypes.Object
-				# create object schema
-				# [schemaType, proto, extensible, ignoreJSON, ignoreParse, requiredAttributes, virtualAttributes, toJSON, toDB]
-				
-				objSchema = new Array <%= SCHEMA.sub %>
-				# objSchema[<%= SCHEMA.schemaType %>] = 1 # -1: means object not yeat compiled
-				# objSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
-				objSchema[<%= SCHEMA.extensible %>] = @extensible || off
-				delete @extensible
-
-				schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
-			return
+		# Object
+		if @nestedObj
+			console.log '------ nested object'
+			objSchema = new Array <%= SCHEMA.sub %>
+			objSchema[<%= SCHEMA.schemaType %>] = 1 # 1: means object
+			# extensibility
+			objSchema[<%= SCHEMA.extensible %>] = if _owns(this, 'extensible') then @extensible else schema[<%= SCHEMA.extensible %>] # inherit
+			schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
+			
+			# objSchema[<%= SCHEMA.extensible %>] = @extensible || off
+		# extensible is alowed only on objects
+		else if @extensible
+			throw new Error '"Extensible" keyword is enabled on objects only'
+		return
 
 ###*
  * List

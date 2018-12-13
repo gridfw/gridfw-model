@@ -6,6 +6,9 @@ _compileSchema = (schema, errors)->
 	
 	# compiled schema, @see schema.template.js for more information
 	compiledSchema = new Array <%= SCHEMA.attrPropertyCount %>
+	# extensibility
+	compiledSchema[<%= SCHEMA.extensible %>] = if schema[DESCRIPTOR]?.extensible then on else off
+
 	#  use queu instead of recursivity to prevent
 	#  stack overflow and increase performance
 	#  queu format: [shema, path, ...]
@@ -14,12 +17,12 @@ _compileSchema = (schema, errors)->
 	# seek through schema
 	while seekQueueIndex < seekQueue.length
 		# load data from Queue
-		schema			= seekQueue[seekQueueIndex]
-		compiledSchema	= seekQueue[++seekQueueIndex]
-		path			= seekQueue[++seekQueueIndex]
+		schema		= seekQueue[seekQueueIndex]
+		cmpSchema	= seekQueue[++seekQueueIndex]
+		path		= seekQueue[++seekQueueIndex]
 		++seekQueueIndex
 		# compile
-		_compileNested schema, compiledSchema, path, seekQueue, errors
+		_compileNested schema, cmpSchema, path, seekQueue, errors
 	# compiled schema
 	return compiledSchema	
 			
@@ -59,21 +62,19 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			# compile: (attr, schema, proto, attrPos)
 			for comp in _descriptorCompilers
 				comp.call attrV, attrN, compiledSchema, proto, attrPos
-			# check for illegal use of "extensible"
-			throw new Error 'Illegal use of "extensible" keyword' if attrV.extensible
 			# next schema
 			nxtSchema = compiledSchema[attrPos + <%= SCHEMA.attrSchema %>]
 			if nxtSchema
 				# nested object
 				if nxtSchema[<%= SCHEMA.schemaType %>] is 1
 					throw new Error 'Nested obj required' unless attrV.nestedObj
-					seekQueue.push nxtSchema, attrV.nestedObj, path.join attrN
+					seekQueue.push attrV.nestedObj, nxtSchema, path.concat attrN
 				# nested array
 				else if nxtSchema[<%= SCHEMA.schemaType %>] is 2
 					arrSchem = nxtSchema[<%= SCHEMA.listSchema %>]
 					if arrSchem
 						throw new Error 'Nested obj required' unless attrV.arrItem
-						seekQueue.push arrSchem, attrV.arrItem, path.join attrN, '*'
+						seekQueue.push attrV.arrItem, arrSchem, path.concat attrN, '*'
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"
@@ -81,7 +82,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			attrPos += <%= SCHEMA.attrPropertyCount %>
 		catch err
 			errors.push
-				path: path.join attrN
+				path: path.concat attrN
 				error: err
 ###*
  * Compile nested array
@@ -98,6 +99,6 @@ _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	# nested object or array
 	if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
 		arrSchem = compiledSchema[<%= SCHEMA.listSchema %>] = new Array <%= SCHEMA.sub %>
-		seekQueue.push arrSchem, arrItem.arrItem || arrItem.nestedObj, path.join '*'
+		seekQueue.push arrItem.arrItem || arrItem.nestedObj, arrSchem, path.concat '*'
 	return
 
