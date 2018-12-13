@@ -60,7 +60,7 @@ _defineDescriptor
 		optional: -> @required = off
 	compile: (attr, schema, proto)->
 		if @required
-			(schema[SCHEMA.required] ?= []).push attr
+			(schema[<%= SCHEMA.required %>] ?= []).push attr
 		return
 
 ###*

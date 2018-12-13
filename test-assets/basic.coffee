@@ -7,10 +7,12 @@ console.log 'Begin tests'
 User = Model.from
 	name: 'user'
 	schema: Model.extensible.value
-		firstName: Model.String
-		test: Model.freeze.value
-			kk:
-				cc: Date
+		firstName: Model.required.String
+		lastName: Model.required.String
+		age: Number
+		# test: Model.freeze.value
+		# 	kk:
+		# 		cc: Date
 		# lastName: Model.String
 		# email: Model.Email
 		# fullName: Model.getter -> "#{@firstName} #{@lastName}"
