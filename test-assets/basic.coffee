@@ -7,9 +7,9 @@ console.log 'Begin tests'
 User = Model.from
 	name: 'user'
 	schema: Model.extensible.value
-		firstName: Model.required.String
-		lastName: Model.required.String
-		age: Number
+		firstName: Model.required.jsonIgnore.String
+		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
+		age: Model.Number.toJSON(->).toDB(->)
 		# test: Model.freeze.value
 		# 	kk:
 		# 		cc: Date

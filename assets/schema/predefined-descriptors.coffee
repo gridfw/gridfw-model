@@ -242,8 +242,8 @@ _defineDescriptor
 			@toDB = fx
 			return
 	compile: (attr, schema, proto, attrPos)->
-		(schema[SCHEMA.toJSON] ?= []).push attr, @toJSON if @toJSON
-		(schema[SCHEMA.toDB] ?= []).push attr, @toJSON if @toDB
+		(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON if @toJSON
+		(schema[<%= SCHEMA.toDB %>] ?= []).push attr, @toJSON if @toDB
 		return
 
 ###*
