@@ -18,7 +18,7 @@ _defineDescriptor
 		jsonEnable: -> @jsonIgnore = 0 # include this attribute with JSON, @default
 	# Compile Prototype and schema
 	compile: (attr, schema, proto)->
-		jsonIgnore = @jsonIgnore
+		jsonIgnore = @jsonIgnore || 0
 		# do not serialize attribute
 		if jsonIgnore & 1
 			ignoreJSONAttr = schema[<%= SCHEMA.ignoreJSON %>]
@@ -93,26 +93,18 @@ _defineDescriptor
 	fx:
 		default: (value)->
 			throw new Error 'Illegal arguments' unless arguments.length is 1
-			# when default value is function, wrap it inside getter
-			if typeof value is 'function'
-				@getter = ->
-					vl = deflt.call this
-					_defineProperty this, attr, value: vl
-					return vl
-			# otherwise, it static value (be careful for objects!)
-			else
-				@default = value
+			@default = value
 			return
 		getter: (fx)->
 			throw new Error "Illegal arguments" unless arguments.length is 1
 			throw new Error "function expected" unless typeof fx is 'function'
-			throw new Errro "Getter expects no argument" unless fx.length is 0
+			throw new Error "Getter expects no argument" unless fx.length is 0
 			@getter = fx
 			return
 		setter: (fx)->
 			throw new Error "Illegal arguments" unless arguments.length is 1
 			throw new Error "function expected" unless typeof fx is 'function'
-			throw new Errro "Setter expects signature: function(value){}" unless fx.length is 1
+			throw new Error "Setter expects signature: function(value){}" unless fx.length is 1
 			@setter = fx
 			return
 		###*
@@ -131,10 +123,24 @@ _defineDescriptor
 				@_.getter value
 			return
 	compile: (attr, schema, proto)->
+		# getter or setter
 		if typeof @getter is 'function' or typeof @setter is 'function'
 			_defineProperty proto, attr,
 				get: @getter
 				set: @setter
+		# default value as function
+		else if typeof @default is 'function'
+			defautFx = @default
+			_defineProperty proto, attr,
+				get: ->
+					vl = defautFx.call this
+					_defineProperty this, attr,
+						value: vl
+						configurable: on
+						enumerable: on
+						writable: on
+					vl
+		# default value
 		else if _owns this, 'default'
 			_defineProperty proto, attr, value: @default
 		return
@@ -145,7 +151,7 @@ _defineDescriptor
  * @example
  * .assert(true)
  * .assert(true, 'Optional Error message')
- * .assert((data)-> data.isTrue())
+ * .assert(call(this, data, attrName)-> data.isTrue())
  * .assert((data)-> throw new Error "Error message: #{data}")
  * .assert(async (data)-> asyncOp(data))
 ###
@@ -198,9 +204,6 @@ _defineDescriptor
 			throw new Error "No assertions predefined for type [#{type.name}]. Use assert(function(data){}) instead" unless typeAssertions
 			# go through assertions
 			asserts = @asserts ?= []
-			# generate assertion
-			assertGen = (attr, assert, value)->
-				(data) -> assert data, value
 			# iterations
 			for k,v of @assertObj
 				throw new Error "No predefined assertion [#{k}] on type [#{type.name}]" unless _owns typeAssertions, k
@@ -208,13 +211,16 @@ _defineDescriptor
 				assertC = typeAssertions[k]
 				assertC.check v
 				# add assertion
-				asserts.push assertGen(k, assertC.assert, v), null # null represents the optional error message
+				asserts.push _assertGen(k, assertC.assert, v), undefined # null represents the optional error message
 		# add asserts
 		if _owns this, 'asserts'
 			schema[attrPos + <%= SCHEMA.attrAsserts %>] = @asserts
 		return
 
-### pipe ###
+# generate assertion
+_assertGen = (attr, assert, value)->
+	(data) -> assert data, value
+### pipe call(this, data, attrName) ###
 _defineDescriptor
 	fx:
 		pipe: (fx)->
@@ -228,6 +234,7 @@ _defineDescriptor
 
 ###*
  * toJSON / toDB
+ * call(this, data, attrName)
 ###
 _defineDescriptor
 	fx:
@@ -295,7 +302,6 @@ _defineDescriptor
 
 		# Object
 		if @nestedObj
-			console.log '------ nested object'
 			objSchema = new Array <%= SCHEMA.sub %>
 			objSchema[<%= SCHEMA.schemaType %>] = 1 # 1: means object
 			# extensibility

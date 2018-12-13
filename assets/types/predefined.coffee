@@ -106,13 +106,6 @@ Model
 			check: (value)-> throw new Error 'Expected valid date' unless value instanceof Date
 			assert: (data, max)-> throw new Error "value greater then #{max}" if Number.parse(max, 16) > max
 ###*
- * Buffer
-###
-.type
-	name	: Buffer
-	check	: (data) -> data instanceof Buffer
-	convert	: (data) -> new Buffer data
-###*
  * Map
 ###
 .type
@@ -288,3 +281,12 @@ Model
 .type
 	name	: 'Mixed'
 	check	: -> true
+
+###*
+ * Buffer
+###
+if typeof Buffer isnt 'undefined'
+	Model.type
+		name	: Buffer
+		check	: (data) -> data instanceof Buffer
+		convert	: (data) -> new Buffer data

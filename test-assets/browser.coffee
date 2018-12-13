@@ -1,4 +1,3 @@
-Model = require '..'
 
 console.log 'Begin tests'
 
@@ -10,6 +9,8 @@ User = Model.from
 		firstName: Model.required.jsonIgnore.String
 		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
 		age: Model.Number.default(5)
+		phones: [String]
+		emails: Model.list String
 		# test: Model.freeze.value
 		# 	kk:
 		# 		cc: Date
