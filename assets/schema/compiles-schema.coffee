@@ -116,14 +116,19 @@ _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	throw new 'Inexpected array schema' unless _owns nestedDescriptor, 'arrItem'
 	compiledSchema[<%= SCHEMA.schemaType %>] = 2 # uncompiled Array
 	compiledSchema[<%= SCHEMA.proto %>] = nestedDescriptor.arrProto
-	# item
-	arrItem = @arrItem
-	tp = compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
-	compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
-	compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
-	# nested object or array
-	if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-		arrSchem = compiledSchema[<%= SCHEMA.listSchema %>] = new Array <%= SCHEMA.sub %>
-		seekQueue.push arrItem.arrItem || arrItem.nestedObj, arrSchem, path.concat '*'
+	
+	# item type
+	arrItem = nestedDescriptor.arrItem
+	if arrItem
+		tp = compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
+		compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
+		compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
+		# nested object or array
+		if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
+			arrSchem = compiledSchema[<%= SCHEMA.listSchema %>] ?= [] #new Array <%= SCHEMA.sub %>
+			# add to queue
+			seekQueue.push arrItem.arrItem || arrItem.nestedObj, arrSchem, path.concat '*'
+		else
+			arrSchem = null
+		compiledSchema[<%= SCHEMA.listSchema %>]= arrSchem
 	return
-

@@ -393,7 +393,7 @@ _defineDescriptor
 				console.log "#{attr}>> already"
 				throw new Error "Illegal convertion to Array" if objSchema[<%= SCHEMA.schemaType %>] isnt 2
 				# proto
-				_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
+				@arrProto = _defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
 			else
 				console.log "#{attr}>> new "
 				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
@@ -401,20 +401,18 @@ _defineDescriptor
 				objSchema[<%= SCHEMA.proto %>] = @arrProto
 				throw new Error "Array type not set!" if @arrItem is null
 			
-			# items
+			# items#TODO remove
 			if @arrItem
 				arrItem = @arrItem[DESCRIPTOR]
 				tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
 				objSchema[<%= SCHEMA.listCheck %>] = tp.check
 				objSchema[<%= SCHEMA.listConvert %>] = tp.convert
 				# nested object or array
-				objSchema[<%= SCHEMA.listSchema %>] = (
-					if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-						[] #new Array <%= SCHEMA.sub %>
-					else
-						null
-				)
-
+				if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
+					arrSchem = objSchema[<%= SCHEMA.listSchema %>] ?= [] #new Array <%= SCHEMA.sub %>
+				else
+					arrSchem = null
+				objSchema[<%= SCHEMA.listSchema %>]= arrSchem
 		return
 
 

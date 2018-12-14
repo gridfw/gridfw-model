@@ -51,8 +51,8 @@ try
 			jobs: [
 				job2: String
 			]
-			work:[Number]
-				# work2: Number
+			work:
+				work2: Number
 	# user1 = User.fromJSON {}
 
 	console.log "User schema>>", User[Model.SCHEMA]
