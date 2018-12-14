@@ -36,6 +36,18 @@ _owns= (obj, property)-> Object.hasOwnProperty.call obj, property
 # Array
 _ArrayPush = Array::push
 
+# remove str element from array
+_arrRemoveItem = (arr, ele)->
+	len = arr.length
+	i=0
+	while i < len
+		if arr[i] is ele
+			arr.splice i, 1
+			--len
+		else
+			++i
+	return
+
 
 # check
 _isPlainObject = (obj)-> obj and typeof obj is 'object' and not Array.isArray obj

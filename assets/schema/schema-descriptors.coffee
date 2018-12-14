@@ -6,6 +6,7 @@
  * @param {function} options.compile	- compilation of result
 ###
 _descriptorCompilers = [] # set of descriptor compilers
+_descriptorFinally = [] # final adjustements
 _defineDescriptor= (options)->
 	# getters
 	if 'get' of options
@@ -18,6 +19,9 @@ _defineDescriptor= (options)->
 	# compile
 	if 'compile' of options
 		_descriptorCompilers.push options.compile
+	# final adjustement
+	if 'finally' of options
+		_descriptorFinally.push options.finally
 	return
 ### wrapper ###
 _defaultDescriptor = ->

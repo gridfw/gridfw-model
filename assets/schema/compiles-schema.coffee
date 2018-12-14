@@ -62,7 +62,7 @@ _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
 ###
 _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
 	compiledSchema[<%= SCHEMA.schemaType %>] = 1 # uncompiled object
-	proto = compiledSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
+	proto = compiledSchema[<%= SCHEMA.proto %>] ?= _create _plainObjPrototype
 	# go through object attributes
 	attrPos = Math.max <%= SCHEMA.sub %>, compiledSchema.length
 	for attrN, attrV of nestedDescriptor.nestedObj
@@ -109,13 +109,22 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			errors.push
 				path: path.concat attrN
 				error: err
+	# final adjustements
+	for comp in _descriptorFinally
+		try
+			comp compiledSchema, proto
+		catch e
+			errors.push
+				path: path
+				error: err
+	return
 ###*
  * Compile nested array
 ###
 _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
 	throw new 'Inexpected array schema' unless _owns nestedDescriptor, 'arrItem'
 	compiledSchema[<%= SCHEMA.schemaType %>] = 2 # uncompiled Array
-	compiledSchema[<%= SCHEMA.proto %>] = nestedDescriptor.arrProto
+	compiledSchema[<%= SCHEMA.proto %>] ?= nestedDescriptor.arrProto
 	
 	# item type
 	arrItem = nestedDescriptor.arrItem

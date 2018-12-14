@@ -18,20 +18,32 @@ _defineDescriptor
 		jsonEnable: -> @jsonIgnore = 0 # include this attribute with JSON, @default
 	# Compile Prototype and schema
 	compile: (attr, schema, proto)->
-		jsonIgnore = @jsonIgnore || 0
-		# do not serialize attribute
-		if jsonIgnore & 1
-			ignoreJSONAttr = schema[<%= SCHEMA.ignoreJSON %>]
-			if ignoreJSONAttr
-				ignoreJSONAttr.push attr
-			else
-				ignoreJSONAttr = schema[<%= SCHEMA.ignoreJSON %>] = [attr]
-				_defineProperties proto, toJSON: -> _toJSONCleaner this, ignoreJSONAttr
-		# ignore when parsing
-		if jsonIgnore & 2
-			#TODO add this to "model.fromJSON"
-			(schema[<%= SCHEMA.ignoreParse %>] ?= []).push attr
+		if _owns this, 'jsonIgnore'
+			jsonIgnore = @jsonIgnore
+			ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
+			ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>] ?= []
+			# remove this attr from JSON flags
+			_arrRemoveItem ignoreParse, attr
+			_arrRemoveItem ignoreSerialize, attr
+			# do not serialize attribute
+			if jsonIgnore & 1
+				ignoreSerialize.push attr
+			# ignore when parsing
+			if jsonIgnore & 2
+				#TODO add this to "model.fromJSON"
+				ignoreParse.push attr
 		return
+	# final adjust
+	finally: (schema, proto) ->
+		ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
+		if ignoreSerialize and ignoreSerialize.length
+			_defineProperty proto, 'toJSON',
+				configurable: on
+				value: -> _toJSONCleaner this, ignoreJSONAttr
+		else
+			delete proto.toJSON
+		return
+
 ###*
  * Virtual methods
 ###
