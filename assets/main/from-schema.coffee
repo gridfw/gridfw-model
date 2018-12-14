@@ -27,9 +27,12 @@ _defineProperty Model, 'from', value: (options)->
 
 	# check and compile schema
 	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
-	errors = []
-	schema = _compileSchema options.schema,errors
-	throw new Error "Schema contains #{errors.length} errors.\n #{_jsonPretty errors}" if errors.length
+	compiledSchema = []
+	# extensibility
+	compiledSchema[<%= SCHEMA.extensible %>] = if options.schema[DESCRIPTOR]?.extensible then on else off
+	# compile schema
+	errors = _compileSchema options.schema, compiledSchema
+	throw new SchemaError "Schema contains #{errors.length} errors.", errors if errors.length
 
 	# Create Model
 	# Use Model.fromJSON or Model.fromDB to performe recusive convertion
@@ -48,7 +51,7 @@ _defineProperty Model, 'from', value: (options)->
 		# return instance
 		instance
 	# add schema
-	model[SCHEMA] = schema
+	model[SCHEMA] = compiledSchema
 	# set model name
 	_defineProperties model,name: value: modelName
 	_setPrototypeOf model, ModelStatics
@@ -62,3 +65,26 @@ _defineProperty Model, 'from', value: (options)->
 	# return model
 	model
 
+###*
+ * Override existing model
+ * @param {string} options.name - Model name, case insensitive
+ * @param {plain object} options.schema - Model schema
+ * @optional @param {plain object} options.static - static properties
+###
+_defineProperty Model, 'override', value: (options)->
+	throw new Error "Illegal arguments" unless arguments.length is 1 and typeof options is 'object' and options
+	# check the name of the model
+	throw new Error "Model name is required" unless 'name' of options
+	throw new Error "Model name expected string" unless typeof options.name is 'string'
+	modelName = options.name.toLowerCase()
+	model = ModelRegistry[modelName]
+	throw new Error "Unknown Model: #{modelName}" unless model
+	# override schema
+	if 'schema' of options
+		errors = _compileSchema options.schema, model[SCHEMA]
+		throw new SchemaError "Schema contains #{errors.length} errors.", errors if errors.length
+	# override static properties
+	if 'static' of options
+		_defineProperties model, Object.getOwnPropertyDescriptors options.static
+	# chain
+	this

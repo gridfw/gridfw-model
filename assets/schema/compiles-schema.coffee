@@ -1,18 +1,20 @@
 
-### compile schema ###
-_compileSchema = (schema, errors)->
+###*
+ * @private
+ * compile schema
+ * @param  {[type]} schema [description]
+ * @param  {[type]} compiledSchema [description]
+ * @return Error list
+###
+_compileSchema = (schema, compiledSchema)->
+	errors = []
 	# prepare schema
 	throw new Error "Illegal argument" unless schema and typeof schema is 'object'
-	
-	# compiled schema, @see schema.template.js for more information
-	compiledSchema = new Array <%= SCHEMA.attrPropertyCount %>
-	# extensibility
-	compiledSchema[<%= SCHEMA.extensible %>] = if schema[DESCRIPTOR]?.extensible then on else off
 
 	#  use queu instead of recursivity to prevent
 	#  stack overflow and increase performance
 	#  queu format: [shema, path, ...]
-	seekQueue = [schema, compiledSchema, []]
+	seekQueue = [schema, compiledSchema, ['ROOT']]
 	seekQueueIndex = 0
 	# seek through schema
 	while seekQueueIndex < seekQueue.length
@@ -23,8 +25,8 @@ _compileSchema = (schema, errors)->
 		++seekQueueIndex
 		# compile
 		_compileNested schema, cmpSchema, path, seekQueue, errors
-	# compiled schema
-	return compiledSchema	
+	# return errors
+	return errors	
 			
 ###*
  * Compile nested object or array
@@ -35,7 +37,20 @@ _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
 	nestedObj = Model.value nestedObj unless _owns nestedObj, DESCRIPTOR
 	# create compiled schema
 	nestedDescriptor = nestedObj[DESCRIPTOR]
+	# check for convertion override
+	scType = compiledSchema[<%= SCHEMA.schemaType %>]
+	if typeof scType is 'number'
+		# is Object
+		if scType is 1
+			throw new Error "Illegal object override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Object
+		# is Array
+		else if scType is 2
+			throw new Error "Illegal array override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Array
+		# uncknown
+		else
+			throw new Error "Unknown type: #{scType}"
 	
+	# apply nested compile
 	if nestedDescriptor.type is _ModelTypes.Object
 		_compileNestedObject nestedDescriptor, compiledSchema, path, seekQueue, errors
 	else if nestedDescriptor.type is _ModelTypes.Array
@@ -49,21 +64,33 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	compiledSchema[<%= SCHEMA.schemaType %>] = 1 # uncompiled object
 	proto = compiledSchema[<%= SCHEMA.proto %>] = _create _plainObjPrototype
 	# go through object attributes
-	attrPos = <%= SCHEMA.sub %>
+	attrPos = Math.max <%= SCHEMA.sub %>, compiledSchema.length
 	for attrN, attrV of nestedDescriptor.nestedObj
 		try
+			# check if attribute already exists (case of override)
+			attrIndex = 0
+			attrI = <%= SCHEMA.sub %>
+			while attrI < attrPos
+				if compiledSchema[attrI] is attrN
+					attrIndex = attrI
+					break
+				attrI += <%= SCHEMA.attrPropertyCount %>
+			unless attrIndex
+				attrIndex = attrPos
+				attrPos += <%= SCHEMA.attrPropertyCount %>
+				compiledSchema[attrIndex + <%= SCHEMA.attrPropertyCount - 1 %>] = null # allocate all needed space
+				compiledSchema[attrIndex] = attrN
 			# check not Model
 			throw new Error "Illegal use of Model" if attrV is Model
 			# convert to descriptor
 			attrV = Model.value attrV unless _owns attrV, DESCRIPTOR
 			# get descriptor
 			attrV =attrV[DESCRIPTOR]
-			compiledSchema[attrPos] = attrN
-			# compile: (attr, schema, proto, attrPos)
+			# compile: (attr, schema, proto, attrIndex)
 			for comp in _descriptorCompilers
-				comp.call attrV, attrN, compiledSchema, proto, attrPos
+				comp.call attrV, attrN, compiledSchema, proto, attrIndex
 			# next schema
-			nxtSchema = compiledSchema[attrPos + <%= SCHEMA.attrSchema %>]
+			nxtSchema = compiledSchema[attrIndex + <%= SCHEMA.attrSchema %>]
 			if nxtSchema
 				# nested object
 				if nxtSchema[<%= SCHEMA.schemaType %>] is 1
@@ -78,8 +105,6 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"
-			# next attr position
-			attrPos += <%= SCHEMA.attrPropertyCount %>
 		catch err
 			errors.push
 				path: path.concat attrN

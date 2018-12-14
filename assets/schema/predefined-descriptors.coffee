@@ -302,11 +302,17 @@ _defineDescriptor
 
 		# Object
 		if @nestedObj
-			objSchema = new Array <%= SCHEMA.sub %>
-			objSchema[<%= SCHEMA.schemaType %>] = 1 # 1: means object
-			# extensibility
-			objSchema[<%= SCHEMA.extensible %>] = if _owns(this, 'extensible') then @extensible else schema[<%= SCHEMA.extensible %>] # inherit
-			schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
+			# check for a schema
+			objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
+			if objSchema
+				throw new Error "Illegal convertion to object" if objSchema[<%= SCHEMA.schemaType %>] isnt 1
+				# extensibility
+				objSchema[<%= SCHEMA.extensible %>] = @extensible if _owns(this, 'extensible')
+			else
+				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
+				objSchema[<%= SCHEMA.schemaType %>] = 1 # 1: means object
+				# extensibility
+				objSchema[<%= SCHEMA.extensible %>] = if _owns(this, 'extensible') then @extensible else schema[<%= SCHEMA.extensible %>] # inherit
 			
 			# objSchema[<%= SCHEMA.extensible %>] = @extensible || off
 		# extensible is alowed only on objects
@@ -371,27 +377,44 @@ _defineDescriptor
 			# else if typeof arg is 'object' and 
 			# else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
 			# 	throw new Error "Illegal argument: #{arg}"
-			@arrItem = Model.value arg
+			if arg in [null, undefined]
+				@arrItem = null
+			else
+				@arrItem = Model.value arg
 			return
 
 	compile: (attr, schema, proto, attrPos)->
-		if @arrItem
+		if _owns this, 'arrItem'
 			throw new Error 'Illegal use of nested Arrays' unless @type is _ModelTypes.Array
 
 			# create object schema
-			objSchema = new Array <%= SCHEMA.sub %>
-			objSchema[<%= SCHEMA.schemaType %>] = 2 # -2: means list not yeat compiled
-			objSchema[<%= SCHEMA.proto %>] = @arrProto
+			objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+			if objSchema
+				console.log "#{attr}>> already"
+				throw new Error "Illegal convertion to Array" if objSchema[<%= SCHEMA.schemaType %>] isnt 2
+				# proto
+				_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
+			else
+				console.log "#{attr}>> new "
+				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
+				objSchema[<%= SCHEMA.schemaType %>] = 2 # -2: means list not yeat compiled
+				objSchema[<%= SCHEMA.proto %>] = @arrProto
+				throw new Error "Array type not set!" if @arrItem is null
 			
 			# items
-			arrItem = @arrItem[DESCRIPTOR]
-			tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
-			objSchema[<%= SCHEMA.listCheck %>] = tp.check
-			objSchema[<%= SCHEMA.listConvert %>] = tp.convert
-			# nested object or array
-			if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-				objSchema[<%= SCHEMA.listSchema %>] = new Array <%= SCHEMA.sub %>
-			schema[attrPos + <%= SCHEMA.attrSchema %>] = objSchema
+			if @arrItem
+				arrItem = @arrItem[DESCRIPTOR]
+				tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
+				objSchema[<%= SCHEMA.listCheck %>] = tp.check
+				objSchema[<%= SCHEMA.listConvert %>] = tp.convert
+				# nested object or array
+				objSchema[<%= SCHEMA.listSchema %>] = (
+					if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
+						[] #new Array <%= SCHEMA.sub %>
+					else
+						null
+				)
+
 		return
 
 

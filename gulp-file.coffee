@@ -22,7 +22,7 @@ throw new Error "Unsupported mode: #{settings.mode}, supported are #{SUPPORTED_M
 if settings.mode is 'node'
 	destFileName = PKG.main.split('/')[1]
 else
-	destFileName = "grid-model-nav-#{PKG.version}.js"
+	destFileName = "grid-model-browser.js"
 
 # compile js (background, popup, ...)
 compileCoffee = ->
@@ -37,7 +37,7 @@ compileCoffee = ->
 		.on 'error', errorHandler
 
 compileTests = ->
-	gulp.src "test-assets/*.coffee"
+	gulp.src "test-assets/**/*.coffee"
 		.pipe include hardFail: true
 		# .pipe template settings
 		# .pipe gulp.dest "test-build"
@@ -45,11 +45,17 @@ compileTests = ->
 		.pipe coffeescript(bare: true).on 'error', errorHandler
 		.pipe gulp.dest "test-build"
 		.on 'error', errorHandler
+compileTestPug= ->
+	gulp.src "test-assets/**/*.pug"
+		.pipe pug()
+		.pipe gulp.dest "test-build"
+		.on 'error', errorHandler
 
 # compile
 watch = ->
 	gulp.watch 'assets/**/*.coffee', compileCoffee
 	gulp.watch 'test-assets/**/*.coffee', compileTests
+	gulp.watch 'test-assets/**/*.pug', compileTestPug
 	return
 
 # error handler
@@ -81,5 +87,5 @@ errorHandler= (err)->
 	return
 
 # create default task
-gulp.task 'default', gulp.series compileCoffee, compileTests, watch
+gulp.task 'default', gulp.series ( gulp.parallel compileCoffee, compileTests, compileTestPug ), watch
 

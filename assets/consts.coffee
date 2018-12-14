@@ -41,18 +41,25 @@ _ArrayPush = Array::push
 _isPlainObject = (obj)-> obj and typeof obj is 'object' and not Array.isArray obj
 
 # clone
-_clone = (obj)-> Object.assign {}, obj
+_clone = (obj)->
+	if typeof obj is 'object' and obj
+		if Array.isArray obj
+			Array.from obj
+		else
+			Object.assign {}, obj
+	else
+		obj
 
 # json pretty
+_prettyJSON = (k,v) ->
+	if typeof v is 'function'
+		v= "[FUNCTION #{v.name}]"
+	else if typeof v is 'symbol'
+		v= "[SYMBOL #{v}]"
+	else if v instanceof Error
+		v =
+			message: v.message
+			stack: v.stack.split("\n")[0..2]
+	v
 _jsonPretty = (obj)->
-	_prettyJSON = (k,v) ->
-		if typeof v is 'function'
-			v= "[FUNCTION #{v.name}]"
-		else if typeof v is 'symbol'
-			v= "[SYMBOL #{v}]"
-		else if v instanceof Error
-			v =
-				message: v.message
-				stack: v.stack.split("\n")[0..2]
-		v
 	JSON.stringify obj, _prettyJSON, "\t"

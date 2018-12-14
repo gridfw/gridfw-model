@@ -2,7 +2,7 @@
   "name": "gridfw-model",
   "version": "1.0.0",
   "description": "Model Framework for javascript",
-  "main": "build/grid-model-node-1.0.0.js",
+  "main": "build/grid-model-node.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

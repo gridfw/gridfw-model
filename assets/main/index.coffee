@@ -25,6 +25,7 @@ _defineProperties Model,
 	TYPE_ATTR: value: TYPE_ATTR
 
 
+#=include errors.coffee
 #=include basic-proto.coffee
 #=include from-schema.coffee
 #=include instance-from.coffee
