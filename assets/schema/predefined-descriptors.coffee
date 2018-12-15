@@ -481,7 +481,8 @@ _defineDescriptor
 				console.log "#{attr}>> already"
 				throw new Error "Illegal convertion to Array" if objSchema[<%= SCHEMA.schemaType %>] isnt 2
 				# proto
-				@arrProto = _defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
+				_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
+				@arrProto = objSchema[<%= SCHEMA.proto %>]
 			else
 				console.log "#{attr}>> new "
 				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
