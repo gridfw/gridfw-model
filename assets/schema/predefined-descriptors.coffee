@@ -337,9 +337,10 @@ _defineDescriptor
 			(@pipe ?= []).push fx
 			return
 	compile: (attr, schema, proto, attrPos)->
-		if _owns this, 'pipe'
-			schema[attrPos + <%= SCHEMA.attrPipe %>] = @pipe
-
+		if @pipe
+			pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
+			pipeArr.push el for el in @pipe
+		return
 ###*
  * Value
  * @example
