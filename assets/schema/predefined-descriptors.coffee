@@ -1,11 +1,45 @@
 
-### JSON cleaner ###
-_toJSONCleaner = (obj, attrToRemove)->
-	result = _create null
-	for k,v of obj
-		result[k] = v unless k in attrToRemove
-	_setPrototypeOf result, Object.getPrototypeOf obj
-	return result
+###*
+ * JSON cleaner
+ * @param  {Array<String>} whiteList  - attributes to include or null
+ * @param  {Array<String>} ignoreAttr - attributes to exclude or null
+ * @param  {Array<attrName, toJSONFx, ...>} toJSONList     - Attributes with special JSON traitement
+ * @return {function}            - toJSON method
+###
+_toJSONCleaner = (whiteList, ignoreAttr, toJSONList)->
+	# process white list
+	if whiteList and ignoreAttr
+		whiteList = _arrDiff whiteList, ignoreAttr
+	# toJSON/toDB function
+	->
+		clone = _create null
+		# white list
+		if whiteList
+			for k,v of this
+				if (_owns this, k) and k in whiteList
+					clone[k] = v
+		# ignored list
+		else if ignoreAttr
+			for k,v of this
+				if (_owns this, k) and k not in ignoreAttr
+					clone[k] = v
+		# just clone
+		else
+			Object.assign clone, this
+		# attr with special fx
+		if toJSONList and toJSONList.length
+			len = toJSONList.length
+			i = 0
+			while i < len
+				# load attr and fx
+				attr = toJSONList[i]
+				fx = toJSONList[++i]
+				++i
+				# apply
+				if attr of clone
+					clone[attr] = fx.call this, clone[attr], attr
+		# return
+		clone
 ###*
  * JSON ignore
 ###
@@ -16,8 +50,14 @@ _defineDescriptor
 		jsonIgnoreStringify: -> @jsonIgnore = 1 # ignore when serializing: 1= 1b
 		jsonIgnoreParse: -> @jsonIgnore = 2 # ignore when parsing: 2 = 10b
 		jsonEnable: -> @jsonIgnore = 0 # include this attribute with JSON, @default
+		# change attribute JSON representation
+		toJSON: (fx)->
+			<%= assertArgsLength(1) %>
+			throw new Error "Expected function" unless typeof fx is 'function'
+			@toJSON = fx
+			return
 	# Compile Prototype and schema
-	compile: (attr, schema, proto)->
+	compile: (attr, schema, proto, attrPos)->
 		if _owns this, 'jsonIgnore'
 			jsonIgnore = @jsonIgnore
 			ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
@@ -32,18 +72,26 @@ _defineDescriptor
 			if jsonIgnore & 2
 				#TODO add this to "model.fromJSON"
 				ignoreParse.push attr
+		# JSON representation of an element
+		(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON if @toJSON
 		return
 	# final adjust
 	finally: (schema, proto) ->
 		ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
-		if ignoreSerialize and ignoreSerialize.length
-			_defineProperty proto, 'toJSON',
-				configurable: on
-				value: -> _toJSONCleaner this, ignoreJSONAttr
+		toJSONList = schema[<%= SCHEMA.toJSON %>]
+		isExtensible = schema[<%= SCHEMA.extensible %>]
+		# using white list
+		if isExtensible is off
+			toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
+		else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
+			toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
 		else
-			delete proto.toJSON
+			toJSONFx = null
+		# apply
+		_defineProperty proto, 'toJSON',
+			configurable: on
+			value: toJSONFx
 		return
-
 ###*
  * Virtual methods
 ###
@@ -52,17 +100,39 @@ _defineDescriptor
 		virtual: -> @virtual = on
 		transient: -> @virtual = on
 		persist: -> @virtual = off
+		# change DB representation
+		toDB: (fx)->
+			<%= assertArgsLength(1) %>
+			throw new Error "Expected function" unless typeof fx is 'function'
+			@toDB = fx
+			return
 	compile: (attr, schema, proto)->
-		if @virtual
-			virtualAttr = schema[<%= SCHEMA.virtual %>]
-			if virtualAttr
-				virtualAttr.push attr
-			else
-				virtualAttr = schema[<%= SCHEMA.virtual %>] = [attr]
-				# implemented for each db engine
-				# _defineProperties proto, toDB: -> _toJSONCleaner this, virtualAttr
+		if _owns this, 'virtual'
+			virtualAttrs = schema[<%= SCHEMA.virtual %>] ?= []
+			# remove attr from virtual list
+			_arrRemoveItem virtualAttrs, attr
+			# add if virtual
+			virtualAttrs.push attr if @virtual
+		# to DB
+		(schema[<%= SCHEMA.toDB %>] ?= []).push attr, @toDB if @toDB
 		return
-
+	# final adjust
+	finally: (schema, proto) ->
+		virtualAttrs = schema[<%= SCHEMA.virtual %>]
+		toDBList = schema[<%= SCHEMA.toDB %>]
+		isExtensible = schema[<%= SCHEMA.extensible %>]
+		# using white list
+		if isExtensible is off
+			toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
+		else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
+			toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
+		else
+			toDBFx = null
+		# apply
+		_defineProperty proto, 'toJSON',
+			configurable: on
+			value: toDBFx
+		return
 ###*
  * Set attribute as required
 ###
@@ -71,8 +141,12 @@ _defineDescriptor
 		required: -> @required = on
 		optional: -> @required = off
 	compile: (attr, schema, proto)->
-		if @required
-			(schema[<%= SCHEMA.required %>] ?= []).push attr
+		if _owns this, 'required'
+			requiredAttrs = schema[<%= SCHEMA.required %>] ?= []
+			# remove attr
+			_arrRemoveItem requiredAttrs, attr
+			# add if required
+			requiredAttrs.push attr if @required
 		return
 
 ###*
@@ -83,36 +157,45 @@ _defineDescriptor
 	get:
 		freeze: -> @extensible = off
 		extensible: -> @extensible = on
-	# compile: (attr, schema, proto)->
-	# 	#TODO
-	# 	schema[SCHEMA.extensible] = @extensible isnt off
-	# 	return
-
 ###*
  * Default value
  * getters / setters
  * .default(8).default('static value').default(true) # default static value
  * .default(window) # static value
  * .default({}) # be careful !! some object will set for all instances
- * .default(=>{}) # create new object for each instance once.
- * .default(-> this.attr ) # generating default value from function (will be called once)
- * .default(Date.now) # generating default value from function (will be called once)
+ * .default(=>{}) # create new object for each instance.
+ * .default(-> this.attr ) # generating default value from function
+ * .default(Date.now) # generating default value from function
  *
- * .get(-> value)
- * .set(-> value)
+ * .getter(-> value) # add getter
+ * .setter(-> value) # add setter
+ *
+ * .getterOnce(4)	# when no value set, set this static value
+ * .getterOnce(fx)	# use this fx to generate value when not set (called once or after deleting value)
+ *
+ * .alias('attrName') # alias to this attribute
+ * .alias(fx)		# getter
 ###
 _defineDescriptor
 	fx:
+		# default value
 		default: (value)->
-			throw new Error 'Illegal arguments' unless arguments.length is 1
+			<%= assertArgsLength(1) %>
 			@default = value
 			return
+		# getter
 		getter: (fx)->
-			throw new Error "Illegal arguments" unless arguments.length is 1
+			<%= assertArgsLength(1) %>
 			throw new Error "function expected" unless typeof fx is 'function'
 			throw new Error "Getter expects no argument" unless fx.length is 0
 			@getter = fx
 			return
+		# generate value once and set it to this object
+		getterOnce: (value)->
+			<%= assertArgsLength(1) %>
+			@getterOnce = value
+			return
+		# setter
 		setter: (fx)->
 			throw new Error "Illegal arguments" unless arguments.length is 1
 			throw new Error "function expected" unless typeof fx is 'function'
@@ -126,35 +209,46 @@ _defineDescriptor
 		 * .alias(-> getter_expr)# alias to .getter(-> getter_expr)
 		###
 		alias: (value)->
-			throw new Error "Illegal arguments" unless arguments.length is 1
+			<%= assertArgsLength(1) %>
 			# alias to attribute
 			if typeof value is 'string'
 				@getter = -> @[value]
 			# getter
 			else if typeof value is 'function'
 				@_.getter value
+			else
+				throw new Error "Illegal argument for [alias] method"
 			return
 	compile: (attr, schema, proto)->
 		# getter or setter
 		if typeof @getter is 'function' or typeof @setter is 'function'
 			_defineProperty proto, attr,
+				configurable: on
 				get: @getter
 				set: @setter
-		# default value as function
-		else if typeof @default is 'function'
-			defautFx = @default
+		# getter once
+		else if _owns this, 'getterOnce'
+			getterOnce = @getterOnce
 			_defineProperty proto, attr,
+				configurable: on
 				get: ->
-					vl = defautFx.call this
+					vl = if typeof getterOnce is 'function' then (getterOnce.call this) else getterOnce
 					_defineProperty this, attr,
 						value: vl
 						configurable: on
 						enumerable: on
 						writable: on
 					vl
+		# default value as function
+		else if typeof @default is 'function'
+			_defineProperty proto, attr,
+				configurable: on
+				get: @default
 		# default value
 		else if _owns this, 'default'
-			_defineProperty proto, attr, value: @default
+			_defineProperty proto, attr,
+				configurable: on
+				value: @default
 		return
 
 ###*
@@ -210,12 +304,12 @@ _defineDescriptor
 		# add basic asserts
 		if _owns this, 'assertObj'
 			# get type
-			type = @type
+			type = @type || schema[attrPos + <%= SCHEMA.attrType %>]
 			throw new Error "No type specified to use predefined assertions. Use assert(function(data){}) instead" unless type
 			typeAssertions = type.assertions
 			throw new Error "No assertions predefined for type [#{type.name}]. Use assert(function(data){}) instead" unless typeAssertions
 			# go through assertions
-			asserts = @asserts ?= []
+			schemaPropertyAsserts = schema[attrPos + <%= SCHEMA.attrPropertyAsserts %>] ?= _create null
 			# iterations
 			for k,v of @assertObj
 				throw new Error "No predefined assertion [#{k}] on type [#{type.name}]" unless _owns typeAssertions, k
@@ -223,15 +317,17 @@ _defineDescriptor
 				assertC = typeAssertions[k]
 				assertC.check v
 				# add assertion
-				asserts.push _assertGen(k, assertC.assert, v), undefined # null represents the optional error message
+				# schemaPropertyAsserts[k] = _assertGen assertC.assert, v
+				schemaPropertyAsserts[k] = v
 		# add asserts
 		if _owns this, 'asserts'
-			schema[attrPos + <%= SCHEMA.attrAsserts %>] = @asserts
+			assertArr = schema[attrPos + <%= SCHEMA.attrAsserts %>] ?= []
+			assertArr.push el for el in @asserts
 		return
 
-# generate assertion
-_assertGen = (attr, assert, value)->
-	(data) -> assert data, value
+# # generate assertion
+# _assertGen = (assert, value)->
+# 	(obj, data, attr) -> assert.call obj, data, value, attr
 ### pipe call(this, data, attrName) ###
 _defineDescriptor
 	fx:
@@ -243,27 +339,6 @@ _defineDescriptor
 	compile: (attr, schema, proto, attrPos)->
 		if _owns this, 'pipe'
 			schema[attrPos + <%= SCHEMA.attrPipe %>] = @pipe
-
-###*
- * toJSON / toDB
- * call(this, data, attrName)
-###
-_defineDescriptor
-	fx:
-		toJSON: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "Expected function" unless typeof fx is 'function'
-			@toJSON = fx
-			return
-		toDB: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "Expected function" unless typeof fx is 'function'
-			@toDB = fx
-			return
-	compile: (attr, schema, proto, attrPos)->
-		(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON if @toJSON
-		(schema[<%= SCHEMA.toDB %>] ?= []).push attr, @toJSON if @toDB
-		return
 
 ###*
  * Value

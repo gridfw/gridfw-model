@@ -29,8 +29,8 @@ var nestedObjSchema = [
 	'required',		// list of required attributes
 	'virtual',		// virtual attributes
 
-	'toJSON',		// [attr, toJSONFx, ...] convert attributes
-	'toDB'			// [attr, toJSONFx, ...] convert attributes
+	'toJSON',		// [attr, toJSONFx.call(parentObj, data, attr), ...] convert attributes
+	'toDB'			// [attr, toDBFx.call(parentObj, data, attr), ...] convert attributes
 ];
 var nestedListSchema = [
 	'schemaType',	// is nested list or nested object
@@ -43,9 +43,11 @@ var nestedListSchema = [
 // attribute descriptors
 var schemaAttrDescrptr =[
 	'attrName',		// name of the attribute
+	'attrType',		// type of the attribute
 	'attrCheck',	// check attribute type
 	'attrConvert',	// convert attribute type
-	'attrAsserts',	// list of assertions
+	'attrAsserts',	// list of assertion functions
+	'attrPropertyAsserts',	// object representing static asserts (like str length, min, max, ...)
 	'attrPipe',		// list of pipe functions
 	'attrSchema'	// sub-schema
 ];

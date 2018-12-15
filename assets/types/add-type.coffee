@@ -75,6 +75,7 @@ _defineDescriptor
 	compile: (attr, schema, proto, attrPos)->
 		type = @type
 		if type
+			schema[attrPos + <%= SCHEMA.attrType %>] = type
 			schema[attrPos + <%= SCHEMA.attrCheck %>] = type.check
 			schema[attrPos + <%= SCHEMA.attrConvert %>] = type.convert
 		return

@@ -3,6 +3,7 @@ do ->
 	 * Model
 	###
 	#=include consts.coffee
+	#=include utils.coffee
 	_schemaDescriptor = _create null
 	Model = _create _schemaDescriptor
 
