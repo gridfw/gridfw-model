@@ -404,8 +404,8 @@ _defineDescriptor
 			
 			# objSchema[<%= SCHEMA.extensible %>] = @extensible || off
 		# extensible is alowed only on objects
-		else if @extensible
-			throw new Error '"Extensible" keyword is enabled on objects only'
+		else if _owns this, 'extensible'
+			throw new Error '"extensible/freeze" keywords are to be used with objects only'
 		return
 
 ###*
