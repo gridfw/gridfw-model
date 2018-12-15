@@ -75,7 +75,38 @@ _defineDescriptor
 	compile: (attr, schema, proto, attrPos)->
 		type = @type
 		if type
+			# clean any previous type adjustements
+			previousType = schema[attrPos + <%= SCHEMA.attrType %>]
+			if previousType and previousType isnt type
+				# clean pipe
+				if previousType.pipe
+					a = schema[attrPos + <%= SCHEMA.attrPipe %>]
+					_arrRemoveItem a, previousType.pipe if a
+				# clean toJSON
+				if previousType.toJSON
+					a = schema[<%= SCHEMA.toJSON %>]
+					_clean_ToJSON_toDB_fx a, attr, previousType.toJSON if a
+				# clean toDB
+				if previousType.toDB
+					a = schema[<%= SCHEMA.toDB %>]
+					_clean_ToJSON_toDB_fx a, attr, previousType.toDB if a
+			# add new Type
 			schema[attrPos + <%= SCHEMA.attrType %>] = type
 			schema[attrPos + <%= SCHEMA.attrCheck %>] = type.check
 			schema[attrPos + <%= SCHEMA.attrConvert %>] = type.convert
 		return
+
+# arr = [attrName, toJSONFx, ...]
+_clean_ToJSON_toDB_fx = (arr, attribute, method)->
+	len = arr.length
+	i = 0
+	while i < len
+		j = i
+		attr = arr[j]
+		fx = arr[++j]
+		if attr is attribute and fx is method
+			arr.splice i, 2
+		else
+			++j
+			i = j
+	return
