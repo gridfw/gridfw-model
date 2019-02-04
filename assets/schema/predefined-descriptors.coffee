@@ -50,7 +50,8 @@ _defineDescriptor
 		jsonIgnoreStringify: -> @jsonIgnore = 1 # ignore when serializing: 1= 1b
 		jsonIgnoreParse: -> @jsonIgnore = 2 # ignore when parsing: 2 = 10b
 		jsonEnable: -> @jsonIgnore = 0 # include this attribute with JSON, @default
-		# change attribute JSON representation
+	# change attribute JSON representation
+	fx:
 		toJSON: (fx)->
 			<%= assertArgsLength(1) %>
 			throw new Error "Expected function" unless typeof fx is 'function'

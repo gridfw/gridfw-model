@@ -9,7 +9,7 @@
 _compileSchema = (schema, compiledSchema)->
 	errors = []
 	# prepare schema
-	throw new Error "Illegal argument" unless schema and typeof schema is 'object'
+	throw new Error "Compile Schema>> Illegal argument" unless schema and typeof schema is 'object'
 
 	#  use queu instead of recursivity to prevent
 	#  stack overflow and increase performance
@@ -42,13 +42,13 @@ _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
 	if typeof scType is 'number'
 		# is Object
 		if scType is 1
-			throw new Error "Illegal object override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Object
+			throw new Error "compileNested>> Illegal object override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Object
 		# is Array
 		else if scType is 2
-			throw new Error "Illegal array override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Array
+			throw new Error "compileNested>> Illegal array override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Array
 		# uncknown
 		else
-			throw new Error "Unknown type: #{scType}"
+			throw new Error "compileNested>> Unknown type: #{scType}"
 	
 	# apply nested compile
 	if nestedDescriptor.type is _ModelTypes.Object

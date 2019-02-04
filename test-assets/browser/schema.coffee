@@ -6,7 +6,8 @@ try
 
 	User = Model.from
 		name: 'user'
-		schema: Model.extensible.value
+		# schema: Model.extensible.value
+		schema: Model.value
 			firstName: Model.required.jsonIgnore.String
 			lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
 			# age: Model.Number.default(5)
@@ -55,9 +56,16 @@ try
 				work2: Number
 	# user1 = User.fromJSON {}
 
-	console.log "User schema>>", User[Model.SCHEMA]
+	# console.log "User schema>>", User[Model.SCHEMA]
 	# console.log "User1>>", user1.__proto__
+
+	# create user instance
+	# Model
+
+
+
+
 
 	console.log '---- end test'
 catch err
-	console.error "uncaugth error: #{err}"
+	console.error "uncaught error:", err

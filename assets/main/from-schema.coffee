@@ -1,12 +1,7 @@
 ###*
- * Model regestry
-###
-ModelRegistry = _create null
-
-###*
  * Get registred Model
 ###
-_defineProperty Model, 'get', value: (modelName)-> ModelRegistry[modelName]
+_defineProperty Model, 'get', value: (modelName)-> @all[modelName]
 
 ###*
  * Create new Model from schema
@@ -23,7 +18,7 @@ _defineProperty Model, 'from', value: (options)->
 	throw new Error "Model name is required" unless 'name' of options
 	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
-	throw new Error "Model alreay set: #{modelName}" if modelName of ModelRegistry
+	throw new Error "Model alreay set: #{modelName}" if modelName of @all
 
 	# check and compile schema
 	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
@@ -53,7 +48,9 @@ _defineProperty Model, 'from', value: (options)->
 	# add schema
 	model[SCHEMA] = compiledSchema
 	# set model name
-	_defineProperties model,name: value: modelName
+	_defineProperties model,
+		name: value: modelName
+		Model: value: this
 	_setPrototypeOf model, ModelStatics
 	# add static attributes
 	if 'static' of options
@@ -61,7 +58,7 @@ _defineProperty Model, 'from', value: (options)->
 	# model prototype
 	modelProto = model.prototype = _create ModelPrototype
 	# add to registry
-	ModelRegistry[modelName] = model
+	@all[modelName] = model
 	# return model
 	model
 
@@ -77,7 +74,7 @@ _defineProperty Model, 'override', value: (options)->
 	throw new Error "Model name is required" unless 'name' of options
 	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
-	model = ModelRegistry[modelName]
+	model = @all[modelName]
 	throw new Error "Unknown Model: #{modelName}" unless model
 	# override schema
 	if 'schema' of options

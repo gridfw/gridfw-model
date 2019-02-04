@@ -2,6 +2,7 @@
 # Object shortcuts
 _create = Object.create
 _setPrototypeOf= Object.setPrototypeOf
+_getPrototypeOf= Object.getPrototypeOf
 _defineProperties= Object.defineProperties
 _defineProperty= Object.defineProperty
 _has = Reflect.has
