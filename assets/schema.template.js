@@ -71,3 +71,5 @@ for(var len = schemaAttrDescrptr.length, i= 0; i< len; ++i){
 // index where attributes starts
 SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length)
 SCHEMA.attrPropertyCount = schemaAttrDescrptr.length // attribute properties count
+SCHEMA.OBJECT = 1
+SCHEMA.LIST = 2

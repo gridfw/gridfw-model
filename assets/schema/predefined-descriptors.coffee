@@ -257,29 +257,25 @@ _defineDescriptor
  * Used when validating data
  * @example
  * .assert(true)
- * .assert(true, 'Optional Error message')
  * .assert(call(this, data, attrName)-> data.isTrue())
  * .assert((data)-> throw new Error "Error message: #{data}")
- * .assert(async (data)-> asyncOp(data))
 ###
 _defineDescriptor
 	fx:
-		assert: (assertion, optionalMessage)->
+		assert: (assertion)->
+			<%= assertArgsLength(1) %>
 			# assertion object
 			if typeof assertion is 'object' and assertion
-				throw new Error "Could not set optional message when configuring predefined assertion, use .assert(function(data){}, 'optional message') instead." if optionalMessage
 				assertObj = @assertObj ?= _create null
 				for k,v of assertion
 					assertObj[k] = v
 			else
-				<%= assertArgsLength(1,2) %>
-				throw new Error "Optional message expected string" if optionalMessage and typeof optionalMessage isnt 'string'
 				# convert to function
 				if typeof assertion isnt 'function'
 					vl = assertion
-					assertion = (data)-> data is vl
+					assertion = (data)-> throw new Error "Not equals: #{vl}" unless data is vl
 				# add to assertions
-				(@asserts ?= []).push assertion, optionalMessage
+				(@asserts ?= []).push assertion
 			return
 		# wrappers
 		length: (value) ->
