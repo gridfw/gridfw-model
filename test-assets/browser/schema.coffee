@@ -54,7 +54,6 @@ try
 			]
 			work:
 				work2: Number
-	# user1 = User.fromJSON {}
 
 	# console.log "User schema>>", User[Model.SCHEMA]
 	# console.log "User1>>", user1.__proto__
@@ -62,6 +61,15 @@ try
 	# create user instance
 	# Model
 
+	user1 = User.fromJSON
+		name: 'khalid'
+		lastName: 'rafik'
+		company: 'coredigix'
+		phone: ['10215', '0231525', '524625125', '421541252', '41524251']
+		emails:[{
+			type:'office'
+			value: 'khalid@coredigix.com'
+			}]
 
 
 

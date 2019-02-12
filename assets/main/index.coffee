@@ -16,9 +16,10 @@
 # 		throw new Error "Illegal arguments"
 # 	return instance
 # prototype
-ModelPrototype = _create null
+ModelPrototype = _create Function.prototype,
+	toString: value: -> "[Model #{@name}]"
 # static protoperties
-ModelStatics = _create null
+ModelStatics = _create 
 ### Add symbols ###
 _defineProperties Model,
 	SCHEMA: value: SCHEMA # link object to it's schema
