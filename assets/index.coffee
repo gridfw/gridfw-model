@@ -1,6 +1,19 @@
 ###*
  * Model
 ###
+
+
+# coredigix xss
+#TODO
+xssClean = (data)->
+	Model.warn 'Coredigix xss cleaner is missing'
+	data
+
+xssEscape = (data)->
+	Model.warn 'Coredigix xss cleaner is missing'
+	data
+	
+
 <%
 #=include template-defines.js
 #=include schema.template.js
@@ -54,3 +67,4 @@ _setPrototypeOf _schemaDescriptor, new Proxy {},
 	get: (obj, attr) ->
 		throw new Error "Unknown Model property: #{attr?.toString?()}" unless typeof attr is 'symbol'
 	set: (obj, attr, value) -> throw new Error "Unknown Model property: #{attr?.toString?()}"
+

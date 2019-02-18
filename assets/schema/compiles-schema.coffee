@@ -14,7 +14,7 @@ _compileSchema = (schema, compiledSchema)->
 	#  use queu instead of recursivity to prevent
 	#  stack overflow and increase performance
 	#  queu format: [shema, path, ...]
-	seekQueue = [schema, compiledSchema, ['ROOT']]
+	seekQueue = [schema, compiledSchema, []]
 	seekQueueIndex = 0
 	# seek through schema
 	while seekQueueIndex < seekQueue.length

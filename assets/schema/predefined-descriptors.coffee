@@ -71,8 +71,8 @@ _defineDescriptor
 				ignoreSerialize.push attr
 			# ignore when parsing
 			if jsonIgnore & 2
-				#TODO add this to "model.fromJSON"
 				ignoreParse.push attr
+				throw 'Could not use "required" directive when "jsonIgnoreParsing" or "jsonIgnore" are set'
 		# JSON representation of an element
 		(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON if @toJSON
 		return

@@ -8,21 +8,22 @@ Model
 .type
 	name: 'Object'
 	check: (data)-> typeof data is 'object' and not Array.isArray data
-	convert: -> throw new Error 'Invalid Object'
+	convert: -> throw 'Invalid Object'
 .type
 	name: 'Array'
 	check: (data)-> Array.isArray data
-	convert: (data)-> [data] # accept to have the element directly when array contains just one element
+	convert: (data)-> # accept to have the element directly when array contains just one element
+		if data? then [data] else []
 	assertions:
 		min:
 			check: _checkIsNumber
-			assert: (data, min) -> throw new Error "Array length [#{data.length}] is less then #{min}" if data.length < min
+			assert: (data, min) -> throw "Array length [#{data.length}] is less then #{min}" if data.length < min
 		max:
 			check: _checkIsNumber
-			assert: (data, max) -> throw new Error "Array length [#{data.length}] is greater then #{max}" if data.length > max
+			assert: (data, max) -> throw "Array length [#{data.length}] is greater then #{max}" if data.length > max
 		length:
 			check: _checkIsNumber
-			assert: (data, len) -> throw new Error "Array length [#{data.length}] expected #{len}" if data.length isnt len
+			assert: (data, len) -> throw "Array length [#{data.length}] expected #{len}" if data.length isnt len
 ###*
  * Boolean
 ###
@@ -38,16 +39,16 @@ Model
 	check	: (data) -> typeof data is 'number'
 	convert	: (data) ->
 		value = +data
-		throw new Error "Invalid number #{data}" if isNaN value
+		throw "Invalid number: #{data}" if isNaN value
 		value
 	# define assertion for this type
 	assertions:
 		min:
 			check: _checkIsNumber
-			assert: (data, min) -> throw new Error "value less then #{min}" if data < min
+			assert: (data, min) -> throw "value less then #{min}" if data < min
 		max:
 			check: _checkIsNumber
-			assert: (data, max) -> throw new Error "value exceeds #{max}" if data > max
+			assert: (data, max) -> throw "value exceeds #{max}" if data > max
 ###*
  * Integer
 ###
@@ -57,7 +58,7 @@ Model
 	check	: (data) -> Number.isSafeInteger data
 	convert	: (data) ->
 		value = +data
-		throw new Error "Invalid integer #{data}" unless Number.isSafeInteger value
+		throw "Invalid integer #{data}" unless Number.isSafeInteger value
 		value
 ###*
  * Positive integer
@@ -68,7 +69,7 @@ Model
 	check	: (data) -> Number.isSafeInteger data and data >= 0
 	convert	: (data) ->
 		value = +data
-		throw new Error "Invalid positive integer #{data}" unless Number.isSafeInteger value and data >= 0
+		throw "Invalid positive integer #{data}" unless Number.isSafeInteger value and data >= 0
 		value
 ###*
  * Hexadicimal number (as string)
@@ -78,15 +79,15 @@ Model
 	name	: 'Hex'
 	check	: (data) -> typeof data is 'string' and HEX_CHECK.test data
 	convert	: (data) ->
-		throw new Error "Invalid Hex: #{data}" unless typeof data is 'number'
+		throw "Invalid Hex: #{data}" unless typeof data is 'number'
 		data.toString 16
 	assertions:
 		min:
 			check: _checkIsNumber
-			assert: (data, min)-> throw new Error "value less then #{min}" if Number.parse(data, 16) < min
+			assert: (data, min)-> throw "value less then: #{min}" if Number.parse(data, 16) < min
 		max:
 			check: _checkIsNumber
-			assert:(data, max)-> throw new Error "value greater then #{max}" if Number.parse(data, 16) > max
+			assert:(data, max)-> throw "value greater then: #{max}" if Number.parse(data, 16) > max
 
 ###*
  * Date
@@ -96,15 +97,15 @@ Model
 	check	: (data) -> data instanceof Date
 	convert	: (data) ->
 		v= new Date data
-		throw new Error "Invalid date: #{data}" if v.toString() is 'Invalid Date'
+		throw "Invalid date: #{data}" if v.toString() is 'Invalid Date'
 		v
 	assertions:
 		min: # min date
-			check: (value)-> throw new Error 'Expected valid date' unless value instanceof Date
-			assert: (data, min)-> throw new Error "Date before #{min}" if value < min
+			check: (value)-> throw 'Expected valid date' unless value instanceof Date
+			assert: (data, min)-> throw "Date before: #{min}" if value < min
 		max: # max date
-			check: (value)-> throw new Error 'Expected valid date' unless value instanceof Date
-			assert: (data, max)-> throw new Error "value greater then #{max}" if Number.parse(max, 16) > max
+			check: (value)-> throw 'Expected valid date' unless value instanceof Date
+			assert: (data, max)-> throw "value greater then: #{max}" if Number.parse(max, 16) > max
 ###*
  * Map
 ###
@@ -112,7 +113,7 @@ Model
 	name	: Map
 	check	: (data) -> data instanceof Map
 	convert	: (data) ->
-		throw new Error "Invalid Map: #{data}" unless typeof data is 'object'
+		throw "Invalid Map: #{data}" unless typeof data is 'object'
 		new Map Object.entries data
 	toJSON	: _Map2Obj
 	toDB	: _Map2Obj
@@ -124,7 +125,7 @@ Model
 	name	: Set
 	check	: (data) -> data instanceof Set
 	convert	: (data) ->
-		throw new Error "Invalid Set: #{data}" unless Array.isArray data
+		throw "Invalid Set: #{data}" unless Array.isArray data
 		new Set data
 	toJSON	: _Set2Array
 	toDB	: _Set2Array
@@ -135,7 +136,7 @@ Model
 	name	: WeakMap
 	check	: (data) -> data instanceof WeakMap
 	convert	: (data) ->
-		throw new Error "Invalid WeakMap: #{data}" unless typeof data is 'object'
+		throw "Invalid WeakMap: #{data}" unless typeof data is 'object'
 		new WeakMap Object.entries data
 	toJSON	: _Map2Obj
 	toDB	: _Map2Obj
@@ -146,7 +147,7 @@ Model
 	name	: WeakSet
 	check	: (data) -> data instanceof WeakSet
 	convert	: (data) ->
-		throw new Error "Invalid WeakSet: #{data}" unless Array.isArray data
+		throw "Invalid WeakSet: #{data}" unless Array.isArray data
 		new WeakSet data
 	toJSON	: _Set2Array
 	toDB	: _Set2Array
@@ -162,17 +163,17 @@ Model
 	assertions:
 		min:
 			check: _checkIsNumber
-			assert: (data, min)-> throw new Error "String length less then #{min}" if data.length < min
+			assert: (data, min)-> throw "String length less then #{min}" if data.length < min
 		max:
 			check: _checkIsNumber
-			assert: (data, max)-> throw new Error "String exceeds #{max}" if data.length > max
+			assert: (data, max)-> throw "String exceeds #{max}" if data.length > max
 		length:
 			check: _checkIsNumber
-			assert: (data, len)-> throw new Error "String length [#{data.length}] expected #{len}" if data.length isnt len
+			assert: (data, len)-> throw "String length [#{data.length}] expected #{len}" if data.length isnt len
 		# match regex
 		match:
-			check: (value)-> throw new Error 'Expected RegExp' unless value instanceof RegExp
-			assert: (data, regex)-> throw new Error "Expected to match: #{regex}" unless regex.test data.href
+			check: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
+			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
 	assert	:
 		max: STRING_MAX
 ###*
@@ -182,7 +183,7 @@ Model
 .type
 	name	: String
 	extends : 'Text'
-	pipe	: (data)-> xss.escape data
+	pipe	: xssEscape
 ###*
  * URL
 ###
@@ -195,20 +196,20 @@ Model
 			check: _checkIsNumber
 			assert: (data, min)->
 				urlLen = data.href.length
-				throw new Error "URL length [#{urlLen}] is less then #{min}" if urlLen < min
+				throw "URL length [#{urlLen}] is less then #{min}" if urlLen < min
 		max:
 			check: _checkIsNumber
 			assert: (data, max)->
 				urlLen = data.href.length
-				throw new Error "URL length [#{urlLen}] is greater then #{max}" if urlLen > max
+				throw "URL length [#{urlLen}] is greater then #{max}" if urlLen > max
 		length:
 			check: _checkIsNumber
 			assert: (data, len)->
 				urlLen = data.href.length
-				throw new Error "URL length [#{urlLen}] expected #{len}" if urlLen isnt len
+				throw "URL length [#{urlLen}] expected #{len}" if urlLen isnt len
 		match:
-			check: (value)-> throw new Error 'Expected RegExp' unless value instanceof RegExp
-			assert: (data, regex)-> throw new Error "Expected to match: #{regex}" unless regex.test data.href
+			check: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
+			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
 	assert	:
 		max: URL_MAX_LENGTH
 	toJSON	: (data) -> data.href
@@ -230,7 +231,7 @@ Model
 	extends	: 'Text'
 	assert	:
 		max: HTML_MAX_LENGTH
-	pipe	: (data)-> xss.clean data, imgs: off
+	pipe	: (data)-> xssClean data, imgs: off
 ###*
  * HTML with images
  * remove dangerouse code
@@ -240,7 +241,7 @@ Model
 	extends	: 'Text'
 	assert	:
 		max: HTML_MAX_LENGTH
-	pipe	: (data)-> xss.clean data, imgs: on
+	pipe	: (data)-> xssClean data, imgs: on
 ###*
  * Email
 ###
@@ -248,7 +249,7 @@ Model
 	name	: 'Email'
 	extends	: 'Text'
 	check	: (data) -> typeof data is 'string' and EMAIL_CHECK.test data
-	convert	: (data) -> throw new Error "Invalid Email: #{data}"
+	convert	: (data) -> throw "Invalid Email: #{data}"
 	assert	:
 		max: STRING_MAX
 ###*
@@ -257,7 +258,7 @@ Model
 .type
 	name	: 'Password'
 	extends	: 'Text'
-	convert	: (data) -> throw new Error "Invalid Password: #{data}"
+	convert	: (data) -> throw "Invalid Password: #{data}"
 	assert	:
 		min: PASSWD_MIN
 		max: PASSWD_MAX

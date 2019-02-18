@@ -1,8 +1,6 @@
 ### Error ###
-class SchemaError extends Error
-	constructor: (message, errorsList)->
-		super message
-		@errors = errorsList
+class SchemaError
+	constructor: (@message, @errors)->
 	toString: -> "#{@message}\n#{@details}"
 	inspect: -> "#{@message}\n#{@details}"
 

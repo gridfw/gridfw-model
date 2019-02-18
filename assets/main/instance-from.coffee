@@ -49,14 +49,13 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			schema= seekQueu[++seekQueuIndex]
 			path= seekQueu[++seekQueuIndex]
 			++seekQueuIndex
-			_setPrototypeOf obj, null
 			schemaType = schema[<%= SCHEMA.schemaType %>]
 			# convert Object
-			obj[SCHEMA] = schema
 			
 			### Object operations ###
 			if schemaType is <%= SCHEMA.OBJECT %>
 				throw new Error 'Expected plain object' if Array.isArray obj
+				_setPrototypeOf obj, null
 				<% if(isFullCheck){ %>
 				# Remove ignored attributes from JSON
 				if attrs = schema[<%= SCHEMA.ignoreParse %>]
@@ -73,15 +72,21 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						j+= <%= SCHEMA.attrPropertyCount %>
 					# delete other attributes
 					for k of obj
-						delete obj[k] unless k in attrs
+						unless k in attrs
+							delete obj[k]
+							result.warns.push
+								attrName: k
+								path: path.concat k
+								warn: 'Extra attribute'
+
 				# check for required attributes
 				if attrs = schema[<%= SCHEMA.required %>]
 					for v in attrs
 						unless obj[v]?
-							result.error.push
+							result.errors.push
 								required: true
 								attrName: v
-								path: path.join v
+								path: path.concat v
 								error: 'required'
 				<% } %>
 				# 
@@ -131,7 +136,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						if typeof attrObj is 'object' and attrObj
 							seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
 					catch err
-						delete ele[attrName]
+						delete obj[attrName]
 						result.errors.push
 							attrName: attrName
 							path: path.concat attrName
@@ -139,12 +144,49 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 			### List operations ###
 			else
-				throw new Error 'Expected array' unless Array.isArray obj
-
+				throw 'Expected array' unless Array.isArray obj
+				# prepare fxes
+				<% if(isFullCheck){ %>
+				attrType= schema[<%= SCHEMA.listType %>]
+				attrCheck= schema[<%= SCHEMA.listCheck %>]
+				attrConvert= schema[<%= SCHEMA.listConvert %>]
+				<% } %>
+				# go through elements
+				listLen = obj.length
+				i= 0
+				j=0
+				while i < listLen
+					attrObj= obj[i]
+					try
+					<% if(isFullCheck){ %>
+						# check the type
+						unless attrCheck attrObj
+							attrObj = attrConvert attrObj
+							obj.splice i, 1, attrObj # replace in the array
+					<% } %>
+						# if is plain object, add to next subobject to check
+						if typeof attrObj is 'object' and attrObj
+							seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat attrName)
+						# next
+						++i
+					catch err
+						# save error
+						result.errors.push
+							attrName: j
+							path: path.concat j
+							value: attrObj
+							error: err
+						# remove element in the list
+						obj.splice i, 1
+						listLen = obj.length # recalc obj length
+					finally
+						++j
 			#TODO go through list
 			# set prototype of
+			obj[SCHEMA] = schema
 			_setPrototypeOf obj, schema[<%= SCHEMA.proto %>]
 		catch err
+			console.log '*** got ERROR: ', err
 			result.errors.push
 				path: path
 				value: obj

@@ -8,8 +8,9 @@ try
 		name: 'user'
 		# schema: Model.extensible.value
 		schema: Model.value
-			firstName: Model.required.jsonIgnore.String
+			firstName: Model.required.jsonIgnoreStringify.String
 			lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
+			company: String
 			# age: Model.Number.default(5)
 			# phones: [
 			# 	test:String
@@ -40,9 +41,8 @@ try
 	Model.override
 		name: 'user'
 		schema:
-			jobs: [
+			jobs: Model.required.list
 				job1: String
-			]
 			work:
 				work1: Number
 
@@ -52,6 +52,7 @@ try
 			jobs: [
 				job2: String
 			]
+			phone: [Number]
 			work:
 				work2: Number
 
@@ -61,17 +62,32 @@ try
 	# create user instance
 	# Model
 
-	user1 = User.fromJSON
+	user1= 
 		name: 'khalid'
+		firstName: 'khalid'
 		lastName: 'rafik'
 		company: 'coredigix'
+		jobs:[
+			{
+				job1: 'test1'
+				job2: 'test2'
+				job3: 'test3'
+			},
+			{
+				job1: 'Stest1'
+				job2: 'Stest2'
+				job3: 'Stest3'
+			}
+		]
 		phone: ['10215', '0231525', '524625125', '421541252', '41524251']
 		emails:[{
 			type:'office'
 			value: 'khalid@coredigix.com'
 			}]
+	result = User.fromJSON user1
 
-
+	console.log '--user: ', user1
+	console.log '--result: ', result
 
 
 	console.log '---- end test'
