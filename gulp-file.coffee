@@ -11,9 +11,15 @@ pug				= require 'gulp-pug'
 
 GfwCompiler		= require '../compiler'
 
+# settings
+isProd= gutil.env.hasOwnProperty('prod')
+settings=
+	isProd: isProd
+
+
 # check arguments
-SUPPORTED_MODES = ['node', 'browser']
-settings = gutil.env
+# SUPPORTED_MODES = ['node', 'browser']
+# settings = gutil.env
 # throw new Error '"--mode=node" or "--mode=browser" argument is required' unless settings.mode
 # throw new Error "Unsupported mode: #{settings.mode}, supported are #{SUPPORTED_MODES.join ','}." unless settings.mode in SUPPORTED_MODES
 
