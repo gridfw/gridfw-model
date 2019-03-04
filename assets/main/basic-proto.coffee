@@ -13,3 +13,8 @@ _arrayProto = _create Array.prototype,
 
 ### Common plain object prototype ###
 _plainObjPrototype = {}
+
+
+# Model proto
+_docObjProto = _create _plainObjPrototype
+_docArrProto = _create _arrayProto

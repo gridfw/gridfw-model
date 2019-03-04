@@ -15,17 +15,17 @@
 # 	else
 # 		throw new Error "Illegal arguments"
 # 	return instance
-# prototype
-ModelPrototype = _create Function.prototype,
-	toString: value: -> "[Model #{@name}]"
 # static protoperties
-ModelStatics = _create 
+ModelStatics = _create Function.prototype,
+	toString: value: -> "[Model #{@name}]"
+
 ### Add symbols ###
 _defineProperties Model,
 	SCHEMA: value: SCHEMA # link object to it's schema
 	TYPE_ATTR: value: TYPE_ATTR
 
 
+#=include plugin.coffee
 #=include errors.coffee
 #=include basic-proto.coffee
 #=include from-schema.coffee

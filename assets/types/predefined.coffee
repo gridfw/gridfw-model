@@ -159,7 +159,9 @@ Model
 .type
 	name	: 'Text'
 	check	: (data) -> typeof data is 'string'
-	convert	: (data) -> data.toString()
+	convert	: (data) ->
+		throw 'Expected String, got Object.' if typeof data is 'object'
+		data.toString()
 	assertions:
 		min:
 			check: _checkIsNumber

@@ -30,21 +30,37 @@ _defineProperty Model, 'from', value: (options)->
 	throw new SchemaError "Schema contains #{errors.length} errors.", errors if errors.length
 
 	# Create Model
+	# model prototype
+	switch compiledSchema[<%= SCHEMA.schemaType %>]
+		when <%= SCHEMA.OBJECT %>
+			modelProto= _docObjProto
+		when <%= SCHEMA.LIST %>
+			modelProto= _docArrProto
+		else
+			throw new Error 'Unsupported schema'
+
+	_setPrototypeOf compiledSchema[<%= SCHEMA.proto %>], modelProto
+	modelProto = compiledSchema[<%= SCHEMA.proto %>]
 	# Use Model.fromJSON or Model.fromDB to performe recusive convertion
 	model = (instance)->
 		# check for "new" operator
 		if `new.target`
 			throw new Error "Remove arguments or [new] operator" if arguments.length
 			return
-		# return new instance if no argument
-		return _create modelProto unless arguments.length
-		# throws error if illegal arguments
-		throw new Error "Illegal arguments" if arguments.length isnt 1
-		throw new Error "Illegal instance" unless typeof instance is 'object' and instance
-		# convert Object
-		_setPrototypeOf instance, modelProto
+		# convert instance
+		switch arguments.length
+			when 0
+				instance = _create modelProto
+			when 1
+				throw new Error "Illegal instance" unless typeof instance is 'object' and instance
+				# convert Object
+				_setPrototypeOf instance, modelProto
+			else
+				throw new Error "Illegal arguments"
 		# return instance
 		instance
+	# set proto
+	model.prototype = modelProto
 	# add schema
 	model[SCHEMA] = compiledSchema
 	# set model name
@@ -55,8 +71,6 @@ _defineProperty Model, 'from', value: (options)->
 	# add static attributes
 	if 'static' of options
 		_defineProperties model, Object.getOwnPropertyDescriptors options.static
-	# model prototype
-	modelProto = model.prototype = _create ModelPrototype
 	# add to registry
 	@all[modelName] = model
 	# return model

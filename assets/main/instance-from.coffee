@@ -14,10 +14,11 @@
  * @param {Object} instance - instance to convert and validate
 ###
 <%
-var fxes = ['_fastInstanceConvert', '_instanceConvert'];
+var fxes = ['_fastInstanceConvert', '_instanceConvert', '_validate'];
 for(var i=0, len = fxes.length; i<len; ++i){
 	var fxName = fxes[i];
-	var isFullCheck= fxName === '_instanceConvert'
+	var isFullCheck= fxName === '_instanceConvert' || fxName === '_validate';
+	var isValidateOnly = fxName === '_validate';
 %>
 <%=fxName %>= (instance)->
 	throw new Error "<%=fxName %>: Illegal arguments" unless typeof instance is 'object' and instance
@@ -33,10 +34,12 @@ for(var i=0, len = fxes.length; i<len; ++i){
 		# Canceled test below for performance purpose
 		# throw new Error "Model [#{generator}] do not extends [#{model}]" unless generator is model or generator.prototype instanceof model
 	# Result
+	<% if(isFullCheck){ %>
 	result =
-		instance: instance
+		doc: instance
 		errors: []
 		warns: []
+	<% } %>
 	# schema
 	schema = model[SCHEMA]
 	# seek
@@ -56,7 +59,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			if schemaType is <%= SCHEMA.OBJECT %>
 				throw new Error 'Expected plain object' if Array.isArray obj
 				_setPrototypeOf obj, null
-				<% if(isFullCheck){ %>
+				<% if(isFullCheck && !isValidateOnly){ %>
 				# Remove ignored attributes from JSON
 				if attrs = schema[<%= SCHEMA.ignoreParse %>]
 					for v in attrs
@@ -78,8 +81,10 @@ for(var i=0, len = fxes.length; i<len; ++i){
 								attrName: k
 								path: path.concat k
 								warn: 'Extra attribute'
+				<% } %>
 
 				# check for required attributes
+				<% if(isFullCheck){ %>
 				if attrs = schema[<%= SCHEMA.required %>]
 					for v in attrs
 						unless obj[v]?
@@ -107,8 +112,8 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						# delete obj[attrName]
 						continue
 					# convert type
-					try
 					<% if(isFullCheck){ %>
+					try
 						# do check if from JSON
 						attrType= schema[i+<%= SCHEMA.attrType %>]
 						attrCheck= schema[i+<%= SCHEMA.attrCheck %>]
@@ -126,24 +131,32 @@ for(var i=0, len = fxes.length; i<len; ++i){
 								if assertfx= typeAssertions[k]
 									throw new Error 'Type-assertion fails' if (assertfx.assert attrObj, v) is false
 						# apply pipes
+						<% if(!isValidateOnly){ %>
 						if pipes = schema[i+<%= SCHEMA.attrPipe %>]
 							for v in pipes
 								attrObj = v.call obj, attrObj, attrName
+						<% } %>
 						obj[attrName] = attrObj
-					<% } %>
 
 						# if is plain object, add to next subobject to check
 						if typeof attrObj is 'object' and attrObj
 							seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
 					catch err
+						<% if(!isValidateOnly){ %>
 						delete obj[attrName]
+						<% } %>
 						result.errors.push
 							attrName: attrName
 							path: path.concat attrName
 							value: attrObj
 							error: err
+					<% } else { %>
+					# if is plain object, add to next subobject to check
+					if typeof attrObj is 'object' and attrObj
+						seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
+					<% } %>
 			### List operations ###
-			else
+			else if schemaType is <%= SCHEMA.LIST %>
 				throw 'Expected array' unless Array.isArray obj
 				# prepare fxes
 				<% if(isFullCheck){ %>
@@ -157,16 +170,16 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				j=0
 				while i < listLen
 					attrObj= obj[i]
-					try
 					<% if(isFullCheck){ %>
+					try
 						# check the type
 						unless attrCheck attrObj
 							attrObj = attrConvert attrObj
 							obj.splice i, 1, attrObj # replace in the array
-					<% } %>
+
 						# if is plain object, add to next subobject to check
 						if typeof attrObj is 'object' and attrObj
-							seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat attrName)
+							seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat j)
 						# next
 						++i
 					catch err
@@ -177,23 +190,43 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							value: attrObj
 							error: err
 						# remove element in the list
+						<% if(!isValidateOnly){ %>
 						obj.splice i, 1
 						listLen = obj.length # recalc obj length
+						<% } %>
 					finally
 						++j
-			#TODO go through list
+					<% } else { %>
+					# if is plain object, add to next subobject to check
+					if typeof attrObj is 'object' and attrObj
+						seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat j)
+					# next
+					++i
+					++j
+					<% } %>
+			### Unsupported schema type ###
+			else
+				throw new Error 'Illegal schema type'
 			# set prototype of
 			obj[SCHEMA] = schema
 			_setPrototypeOf obj, schema[<%= SCHEMA.proto %>]
 		catch err
 			console.log '*** got ERROR: ', err
+			<% if(isFullCheck){ %>
 			result.errors.push
 				path: path
 				value: obj
 				error: err
-			
-	# return result
+			<% } else { %>
+			throw err
+			<% } %>
+	
+	# return
+	<% if(isFullCheck){ %>
 	result
+	<% } else { %>
+	instance
+	<% } %>
 <%
 }
 %>
@@ -203,19 +236,25 @@ for(var i=0, len = fxes.length; i<len; ++i){
  * This will not performe any validation
  * Will do any required convertion
 ###
-_defineProperties ModelStatics,
-	###*
-	 * Faster model convertion
-	 * no validation will be performed
-	 * Convert an instance from DB or any trusted source
-	 * Any illegal attribute value will just be escaped
-	 * @param  {[type]} instance [description]
-	 * @return {[type]}          [description]
-	###
-	fromDB: value: _fastInstanceConvert
-	###*
-	 * From unstrusted source
-	 * will performe validations
-	 * @type {[type]}
-	###
-	fromJSON: value: _instanceConvert
+# add validate to doc
+Model.plugin
+	model:
+		###*
+		 * Faster model convertion
+		 * no validation will be performed
+		 * Convert an instance from DB or any trusted source
+		 * Any illegal attribute value will just be escaped
+		 * @param  {[type]} instance [description]
+		 * @return {[type]}          [description]
+		###
+		fromDB: _fastInstanceConvert
+		###*
+		 * From unstrusted source
+		 * will performe validations
+		 * @type {[type]}
+		###
+		fromJSON: _instanceConvert
+		###*
+		 * validate
+		###
+		validate: _validate

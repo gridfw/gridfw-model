@@ -129,7 +129,8 @@ _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	# item type
 	arrItem = nestedDescriptor.arrItem
 	if arrItem
-		tp = compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
+		arrItem= arrItem[DESCRIPTOR]
+		tp= compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
 		compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
 		compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
 		# nested object or array

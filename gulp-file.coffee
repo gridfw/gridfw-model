@@ -57,10 +57,12 @@ compileTestPug= ->
 		.on 'error', GfwCompiler.logError
 
 # compile
-watch = ->
-	gulp.watch 'assets/**/*.coffee', compileCoffee
-	gulp.watch 'test-assets/**/*.coffee', compileTests
-	gulp.watch 'test-assets/**/*.pug', compileTestPug
+watch = (cb)->
+	unless isProd
+		gulp.watch 'assets/**/*.coffee', compileCoffee
+		gulp.watch 'test-assets/**/*.coffee', compileTests
+		gulp.watch 'test-assets/**/*.pug', compileTestPug
+	cb()
 	return
 
 # create default task

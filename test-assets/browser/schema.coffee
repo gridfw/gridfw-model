@@ -11,12 +11,16 @@ try
 			firstName: Model.required.jsonIgnoreStringify.String
 			lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
 			company: String
-			# age: Model.Number.default(5)
+			age: Model.Number.default(5).min(3).max(28)
 			# phones: [
 			# 	test:String
 			# 	list: [Number]
 			# ]
-			# emails: Model.list String, cc:->
+			emails: Model.list ({
+				type: String
+				value: String
+				}),
+				cc:->
 			
 			# test: Model.freeze.value
 			# 	kk:
@@ -42,7 +46,7 @@ try
 		name: 'user'
 		schema:
 			jobs: Model.required.list
-				job1: String
+				job1: Model.String.required
 			work:
 				work1: Number
 
@@ -50,11 +54,12 @@ try
 		name: 'user'
 		schema:
 			jobs: [
-				job2: String
+				job2: Model.String
 			]
 			phone: [Number]
 			work:
 				work2: Number
+			call: (name)-> console.log '---- hello: ', name
 
 	# console.log "User schema>>", User[Model.SCHEMA]
 	# console.log "User1>>", user1.__proto__
@@ -66,10 +71,11 @@ try
 		name: 'khalid'
 		firstName: 'khalid'
 		lastName: 'rafik'
+		age: 854
 		company: 'coredigix'
 		jobs:[
 			{
-				job1: 'test1'
+				job1: true
 				job2: 'test2'
 				job3: 'test3'
 			},
@@ -79,7 +85,7 @@ try
 				job3: 'Stest3'
 			}
 		]
-		phone: ['10215', '0231525', '524625125', '421541252', '41524251']
+		phone: ['10215', '0231525', '421541252', '41524251']
 		emails:[{
 			type:'office'
 			value: 'khalid@coredigix.com'
@@ -89,6 +95,17 @@ try
 	console.log '--user: ', user1
 	console.log '--result: ', result
 
+
+	test2 = Model.from
+		name: 'test2'
+		schema: [
+			name: String
+		]
+	console.log '---- test2: ', test2
+	obj = [{name: 'abc'}, {name: 'def'}]
+	test2.fromJSON obj
+
+	console.log '----obj: ', obj
 
 	console.log '---- end test'
 catch err

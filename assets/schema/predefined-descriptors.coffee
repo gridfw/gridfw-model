@@ -101,6 +101,7 @@ _defineDescriptor
 		virtual: -> @virtual = on
 		transient: -> @virtual = on
 		persist: -> @virtual = off
+	fx:
 		# change DB representation
 		toDB: (fx)->
 			<%= assertArgsLength(1) %>
@@ -214,9 +215,9 @@ _defineDescriptor
 			# alias to attribute
 			if typeof value is 'string'
 				@getter = -> @[value]
-			# getter
-			else if typeof value is 'function'
-				@_.getter value
+				@setter = (data)->
+					@[value] = data
+					return
 			else
 				throw new Error "Illegal argument for [alias] method"
 			return
@@ -240,16 +241,23 @@ _defineDescriptor
 						enumerable: on
 						writable: on
 					vl
-		# default value as function
-		else if typeof @default is 'function'
+		# default
+		else if _owns this, 'default'
+			# convert to fx
+			unless typeof @default is 'function'
+				defVak= @default
+				@default = -> defVak
+			# define
 			_defineProperty proto, attr,
 				configurable: on
 				get: @default
-		# default value
-		else if _owns this, 'default'
-			_defineProperty proto, attr,
-				configurable: on
-				value: @default
+				set: (value)->
+					_defineProperty this, attr,
+						value: value
+						writable: on
+						configurable: on
+						enumerable: on
+					return
 		return
 
 ###*
