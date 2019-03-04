@@ -536,3 +536,12 @@ _arrToModelList= (attrV)->
 			Model.list Model.Mixed
 		else
 			throw new Error "One type is expected for Array, #{attrV.length} are given."
+
+
+# snapshot 'snapName'
+# 
+# snapshot
+# 	name: 'snapname'
+# 	from: 'Modelname'
+# 	toDb: (doc)->
+# 	fromDB: (doc)->
