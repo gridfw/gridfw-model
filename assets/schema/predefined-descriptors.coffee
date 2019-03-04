@@ -524,9 +524,62 @@ _defineDescriptor
 			return
 	compile: (attr, schema, proto, attrPos)->
 		if _owns this, 'ref'
+			throw new Error "Could not use ref when nested object, nested array or snapshot are set" if @nestedObj or @arrItem or @snapshot
 			schema[attrPos + <%= SCHEMA.attrRef %>] ?= @ref
 		return
 
+###*
+ * Snapshot
+ * @param {string} options.name - snapshot name, case insensitive
+ * @param {string} options.of - target Model
+ * @param {function} options.toDB - called when storing snapshot to DB
+ * @param {async function} options.fromDB - called to get data from DB
+###
+_defineDescriptor
+	fx:
+		snapshot: (options)->
+			<%= assertArgsLength(1) %>
+			throw new Error "Could not use snapshot when nested object or nested array is set" if @nestedObj or @arrItem
+			# get snapshot
+			if typeof options is 'string'
+				@snapshot = options # snapshot name
+			# create / overrid new snapshot
+			else 
+				throw new Error 'Expected object' unless typeof options is 'object' and options
+				throw new Error 'Options.name expected string' unless typeof options.name is 'string'
+				snapshotName= options.name.toLowerCase() # make it case insensitive
+				snapshot = @snapshots[snapshotName]
+				if snapshot
+					@debug "Overriding snapshot: #{snapshotName}"
+				else
+					@debug "Creating snapshot: #{snapshotName}"
+					throw new Error 'Options.of is required' unless 'of' of options
+					snapshot= @snapshots[snapshotName]= []
+					snapshot[<%= SCHEMA.schemaType %>]= SCHEMA.SNAPSHOT
+					snapshot[<%= SCHEMA.snapName %>]= snapshotName
+				# override
+				snapshot[<%= SCHEMA.snapToDB %>]= options.toDB if typeof options.toDB is 'function'
+				snapshot[<%= SCHEMA.snapFromDB %>]= options.fromDB if typeof options.fromDB is 'function'
+				# model
+				if 'of' of options
+					throw new Error 'Options.of expected string' unless typeof options.of is 'string'
+					snapshot[<%= SCHEMA.snapTargetName %>]= options.of
+					snapshot[<%= SCHEMA.snapSchema %>]= null # clear schema type
+				# set as snapshot
+				@snapshot= snapshotName
+			return
+	compile: (attr, schema, proto, attrPos)->
+		if _owns this, 'snapshot'
+			schema[attrPos + <%= SCHEMA.attrSnapshot %>] ?= @snapshot
+		return
+
+# snapshot 'snapName'
+# 
+# snapshot
+# 	name: 'snapname'
+# 	from: 'Modelname'
+# 	toDb: (doc)->
+# 	fromDB: (doc)->
 # convert data to Model list
 _arrToModelList= (attrV)->
 	switch attrV.length
@@ -536,12 +589,3 @@ _arrToModelList= (attrV)->
 			Model.list Model.Mixed
 		else
 			throw new Error "One type is expected for Array, #{attrV.length} are given."
-
-
-# snapshot 'snapName'
-# 
-# snapshot
-# 	name: 'snapname'
-# 	from: 'Modelname'
-# 	toDb: (doc)->
-# 	fromDB: (doc)->

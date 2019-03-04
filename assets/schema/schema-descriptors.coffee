@@ -35,9 +35,14 @@ _defaultDescriptor = ->
 	return obj
 _defineDescriptorWrapper = (fx) ->
 	->
-		desc = if this is Model then _defaultDescriptor() else this
+		dsrp= @[DESCRIPTOR]
+		# descriptor
+		if dsrp
+			desc= this
+		else
+			desc= _defaultDescriptor()
+			dsrp= desc[DESCRIPTOR]
 		# exec fx
-		dsrp = desc[DESCRIPTOR]
 		fx.apply dsrp, arguments
 		# save representation for debug purpose
 		if arguments.length

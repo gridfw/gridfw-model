@@ -91,17 +91,20 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 				comp.call attrV, attrN, compiledSchema, proto, attrIndex
 			# next schema
 			nxtSchema = compiledSchema[attrIndex + <%= SCHEMA.attrSchema %>]
-			if nxtSchema
+			if nxtSchema and not compiledSchema[attrIndex + <%= SCHEMA.attrRef %>] # not a reference
 				# nested object
-				if nxtSchema[<%= SCHEMA.schemaType %>] is 1
+				if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.OBJECT %>
 					throw new Error 'Nested obj required' unless attrV.nestedObj
 					seekQueue.push attrV.nestedObj, nxtSchema, path.concat attrN
 				# nested array
-				else if nxtSchema[<%= SCHEMA.schemaType %>] is 2
+				else if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
 					arrSchem = nxtSchema[<%= SCHEMA.listSchema %>]
 					if arrSchem
 						throw new Error 'Nested obj required' unless attrV.arrItem
 						seekQueue.push attrV.arrItem, arrSchem, path.concat attrN, '*'
+				# nested snapshot
+				else if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.SNAPSHOT %>
+					# do nothing.
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"

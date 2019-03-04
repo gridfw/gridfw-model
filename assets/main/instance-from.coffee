@@ -57,6 +57,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			
 			### Object operations ###
 			if schemaType is <%= SCHEMA.OBJECT %>
+				<% var isList= false; %>
 				throw new Error 'Expected plain object' if Array.isArray obj
 				_setPrototypeOf obj, null
 				<% if(isFullCheck && !isValidateOnly){ %>
@@ -142,7 +143,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						# if typeof attrObj is 'object' and attrObj
 						# 	seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
 							
-						#=include instance-from-attr-next.coffee
+						#=include instance-from-next.coffee
 					catch err
 						<% if(!isValidateOnly){ %>
 						delete obj[attrName]
@@ -154,10 +155,11 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 					<% } else { %>
 					# if is plain object, add to next subobject to check
-					#=include instance-from-attr-next.coffee
+					#=include instance-from-next.coffee
 					<% } %>
 			### List operations ###
 			else if schemaType is <%= SCHEMA.LIST %>
+				<% isList= true; %>
 				throw 'Expected array' unless Array.isArray obj
 				# prepare fxes
 				<% if(isFullCheck){ %>
@@ -179,7 +181,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							obj.splice i, 1, attrObj # replace in the array
 
 						# if is plain object, add to next subobject to check
-						#=include instance-from-list-next.coffee
+						#=include instance-from-next.coffee
 						# next
 						++i
 					catch err
@@ -198,11 +200,22 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						++j
 					<% } else { %>
 					# if is plain object, add to next subobject to check
-					#=include instance-from-list-next.coffee
+					#=include instance-from-next.coffee
 					# next
 					++i
 					++j
 					<% } %>
+			### Snapshot ###
+			else if schemaType is <%= SCHEMA.SNAPSHOT %>
+				# Do not validate snapshots
+				# Snapshots are processed only by DB logic
+				# nxSchema= schema[<%= SCHEMA.snapSchema %>]
+				# unless nxSchema
+				# 	nxRef= schema[<%= SCHEMA.snapTargetName %>]
+				# 	nxMd = model.all[nxRef]
+				# 	throw "Target model snapshot resolve fails: #{nxRef}" unless nxMd
+				# 	nxSchema= nxMd[SCHEMA]
+				
 			### Unsupported schema type ###
 			else
 				throw new Error 'Illegal schema type'

@@ -44,6 +44,7 @@ Model = do _createModelRoot # basic Model
 # basic error log
 Model.logError = console.error.bind console
 Model.warn = console.warn.bind console
+Model.debug = console.debug.bind console
 
 
 # main
