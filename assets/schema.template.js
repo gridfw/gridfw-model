@@ -39,6 +39,7 @@ var nestedListSchema = [
 	'listCheck',	// fx: check list items basid on some type
 	'listConvert',	// fx: list item type convertion
 	'listSchema'	// list items schema
+	'listRef'		// reference
 ];
 // attribute descriptors
 var schemaAttrDescrptr =[
@@ -50,6 +51,7 @@ var schemaAttrDescrptr =[
 	'attrPropertyAsserts',	// object representing static asserts (like str length, min, max, ...)
 	'attrPipe',		// list of pipe functions
 	'attrSchema'	// sub-schema
+	'attrRef'		// reference
 ];
 
 // create schema info

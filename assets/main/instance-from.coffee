@@ -139,8 +139,10 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						obj[attrName] = attrObj
 
 						# if is plain object, add to next subobject to check
-						if typeof attrObj is 'object' and attrObj
-							seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
+						# if typeof attrObj is 'object' and attrObj
+						# 	seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
+							
+						#=include instance-from-attr-next.coffee
 					catch err
 						<% if(!isValidateOnly){ %>
 						delete obj[attrName]
@@ -152,8 +154,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 					<% } else { %>
 					# if is plain object, add to next subobject to check
-					if typeof attrObj is 'object' and attrObj
-						seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
+					#=include instance-from-attr-next.coffee
 					<% } %>
 			### List operations ###
 			else if schemaType is <%= SCHEMA.LIST %>
@@ -178,8 +179,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							obj.splice i, 1, attrObj # replace in the array
 
 						# if is plain object, add to next subobject to check
-						if typeof attrObj is 'object' and attrObj
-							seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat j)
+						#=include instance-from-list-next.coffee
 						# next
 						++i
 					catch err
@@ -198,8 +198,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						++j
 					<% } else { %>
 					# if is plain object, add to next subobject to check
-					if typeof attrObj is 'object' and attrObj
-						seekQueu.push attrObj, schema[<%= SCHEMA.listSchema %>], (path.concat j)
+					#=include instance-from-list-next.coffee
 					# next
 					++i
 					++j

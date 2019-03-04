@@ -502,13 +502,30 @@ _defineDescriptor
 				objSchema[<%= SCHEMA.listCheck %>] = tp.check
 				objSchema[<%= SCHEMA.listConvert %>] = tp.convert
 				# nested object or array
+				arrSchem = null
 				if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-					arrSchem = objSchema[<%= SCHEMA.listSchema %>] ?= [] #new Array <%= SCHEMA.sub %>
-				else
-					arrSchem = null
+					if 'ref' of arrItem
+						objSchema[<%= SCHEMA.listRef %>]= arrItem.ref
+					else
+						arrSchem ?= [] #new Array <%= SCHEMA.sub %>
+					
 				objSchema[<%= SCHEMA.listSchema %>]= arrSchem
 		return
 
+###*
+ * Reference
+###
+_defineDescriptor
+	fx:
+		ref: (ref)->
+			<%= assertArgsLength(1) %>
+			throw new Error 'Expected string reference' unless typeof ref is 'string'
+			@ref = ref
+			return
+	compile: (attr, schema, proto, attrPos)->
+		if _owns this, 'ref'
+			schema[attrPos + <%= SCHEMA.attrRef %>] ?= @ref
+		return
 
 # convert data to Model list
 _arrToModelList= (attrV)->
