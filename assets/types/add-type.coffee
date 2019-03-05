@@ -92,8 +92,8 @@ _defineDescriptor
 					_clean_ToJSON_toDB_fx a, attr, previousType.toDB if a
 			# add new Type
 			schema[attrPos + <%= SCHEMA.attrType %>] = type
-			schema[attrPos + <%= SCHEMA.attrCheck %>] = type.check
-			schema[attrPos + <%= SCHEMA.attrConvert %>] = type.convert
+			# schema[attrPos + <%= SCHEMA.attrCheck %>] = type.check
+			# schema[attrPos + <%= SCHEMA.attrConvert %>] = type.convert
 		return
 
 # arr = [attrName, toJSONFx, ...]

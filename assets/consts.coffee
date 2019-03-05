@@ -14,7 +14,7 @@ DATA_URL_MEX_LENGTH = 30000 # Data URL max length
 SCHEMA_COUNT = 5 # @see schema/schema.tempate.js for more info
 
 # hex check
-HEX_CHECK	= /^[0-9a-f]$/i
+HEX_CHECK	= /^[0-9a-f]+$/i
 # Email check
 EMAIL_CHECK = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 

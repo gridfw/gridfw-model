@@ -108,5 +108,52 @@ try
 	console.log '----obj: ', obj
 
 	console.log '---- end test'
+
+	console.log 'check "toJSON" =====================================================>'
+	UserModel2= Model.from
+		name: 'user2'
+		schema:
+			name: String
+			id: Model.ObjectId.toJSON (data)->
+				console.log '--- call toJSON of id'
+				data
+			list: [
+				attr: Model.String.toJSON (data)->
+					console.log '------ call  nested toJSON'
+					'****'
+			]
+			list2: Model
+				.toJSON (data)->
+					console.log '--* call listed toJSON'
+					data.map (l)-> l.id
+				.list
+					id: Number
+					name: String
+			info: Model
+				.toJSON (data)->
+					console.log '--[ call info toJSON'
+					{'obj': 'pppp'}
+				.value
+					name: String
+					age: Number
+
+	console.log '---- model UserModel2 created'
+	userA=
+		name: 'khalid'
+		id: '555555555'
+		list:[
+			{id: 'mmmm'}
+		]
+		list2:[
+			{id:1, name:'wij'}, {id:2, name: 'hak'}, {id:3, name: 'raf'}
+		]
+		info:
+			name: 'medo'
+			age: 36
+
+	err= UserModel2.fromJSON userA
+	console.log '----err: ', err
+	# console.log '----user JSON: ', 
+
 catch err
 	console.error "uncaught error:", err

@@ -102,9 +102,6 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 					if arrSchem
 						throw new Error 'Nested obj required' unless attrV.arrItem
 						seekQueue.push attrV.arrItem, arrSchem, path.concat attrN, '*'
-				# nested snapshot
-				else if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.SNAPSHOT %>
-					# do nothing.
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"

@@ -124,13 +124,15 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							attrObj = obj[attrName] = attrConvert attrObj
 						# exec assertions: [assertionFx, optionalMessage, ...]
 						if asserts = schema[i+<%= SCHEMA.attrAsserts %>]
-							for assertfx in asserts
-								throw new Error 'Assertion fails' if (assertionFx.call obj, attrObj, attrName) is false
+							for assertFx in asserts
+								assertFx attrObj, obj, attrName
 						# Type level assertions
-						if (asserts = schema[i+<%= SCHEMA.attrPropertyAsserts %>]) and (typeAssertions = attrType.assertions)
-							for k,v of asserts
-								if assertfx= typeAssertions[k]
-									throw new Error 'Type-assertion fails' if (assertfx.assert attrObj, v) is false
+						if (asserts = schema[i+<%= SCHEMA.attrPropertyAsserts %>])
+							assertsI= 0
+							assertsLen= asserts.length # [assertName, assertParam, assertFx]
+							while assertsI < assertsLen
+								asserts[assertsI+1] attrObj, asserts[assertsI+2], obj, attrName
+								assertsI += 3 # [assertName, assertParam, assertFx]
 						# apply pipes
 						<% if(!isValidateOnly){ %>
 						if pipes = schema[i+<%= SCHEMA.attrPipe %>]

@@ -1,164 +1,124 @@
-
 ###*
- * JSON cleaner
- * @param  {Array<String>} whiteList  - attributes to include or null
- * @param  {Array<String>} ignoreAttr - attributes to exclude or null
- * @param  {Array<attrName, toJSONFx, ...>} toJSONList     - Attributes with special JSON traitement
- * @return {function}            - toJSON method
+ * Check/Convert data
 ###
-_toJSONCleaner = (whiteList, ignoreAttr, toJSONList)->
-	# process white list
-	if whiteList and ignoreAttr
-		whiteList = _arrDiff whiteList, ignoreAttr
-	# toJSON/toDB function
-	->
-		clone = _create null
-		# white list
-		if whiteList
-			for k,v of this
-				if (_owns this, k) and k in whiteList
-					clone[k] = v
-		# ignored list
-		else if ignoreAttr
-			for k,v of this
-				if (_owns this, k) and k not in ignoreAttr
-					clone[k] = v
-		# just clone
-		else
-			Object.assign clone, this
-		# attr with special fx
-		if toJSONList and toJSONList.length
-			len = toJSONList.length
-			i = 0
-			while i < len
-				# load attr and fx
-				attr = toJSONList[i]
-				fx = toJSONList[++i]
-				++i
-				# apply
-				if attr of clone
-					clone[attr] = fx.call this, clone[attr], attr
-		# return
-		clone
+_defineDescriptors
+	check: (descriptor, fx)->
+		throw "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.check %>] = fx
+		return
+	convert: (descriptor, fx)->
+		throw "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.convert %>] = fx
+		return
+# check
+_defineCompiler <%= SCHEMA_DESC.check %>, (descriptorV, attr, schema, proto, attrPos)->
+	schema[attrPos + <%= SCHEMA.attrCheck %>] = descriptorV
+	# list, TODO
+	if @arrItem
+		objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+		objSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
+	return
+# convert
+_defineCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
+	schema[attrPos + <%= SCHEMA.attrConvert %>] = descriptorV
+	# list, TODO
+	if @arrItem
+		objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+		objSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
+	return
+
 ###*
  * JSON ignore
 ###
-_defineDescriptor
-	# JSON getters
-	get:
-		jsonIgnore: -> @jsonIgnore = 3 # ignore json, 3 = 11b = ignoreSerialize | ignoreParse
-		jsonIgnoreStringify: -> @jsonIgnore = 1 # ignore when serializing: 1= 1b
-		jsonIgnoreParse: -> @jsonIgnore = 2 # ignore when parsing: 2 = 10b
-		jsonEnable: -> @jsonIgnore = 0 # include this attribute with JSON, @default
-	# change attribute JSON representation
-	fx:
-		toJSON: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "Expected function" unless typeof fx is 'function'
-			@toJSON = fx
-			return
-	# Compile Prototype and schema
-	compile: (attr, schema, proto, attrPos)->
-		if _owns this, 'jsonIgnore'
-			jsonIgnore = @jsonIgnore
-			ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
-			ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>] ?= []
-			# remove this attr from JSON flags
-			_arrRemoveItem ignoreParse, attr
-			_arrRemoveItem ignoreSerialize, attr
-			# do not serialize attribute
-			if jsonIgnore & 1
-				ignoreSerialize.push attr
-			# ignore when parsing
-			if jsonIgnore & 2
-				ignoreParse.push attr
-				throw 'Could not use "required" directive when "jsonIgnoreParsing" or "jsonIgnore" are set'
-		# JSON representation of an element
-		(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON if @toJSON
+_defineDescriptors
+	jsonIgnore: (descriptor)-> descriptor[<%= SCHEMA_DESC.jsonIgnore %>] = 3 # ignore json, 3 = 11b = ignoreSerialize | ignoreParse
+	jsonIgnoreStringify: (descriptor)-> descriptor[<%= SCHEMA_DESC.jsonIgnore %>] = 1 # ignore when serializing: 1= 1b
+	jsonIgnoreParse: (descriptor)-> descriptor[<%= SCHEMA_DESC.jsonIgnore %>] = 2 # ignore when parsing: 2 = 10b
+	jsonEnable: (descriptor)-> descriptor[<%= SCHEMA_DESC.jsonIgnore %>] = 0 # include this attribute with JSON, @default
+
+	toJSON: (descriptor, fx)->
+		throw new Error "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.toJSON %>] = fx
 		return
-	# final adjust
-	finally: (schema, proto) ->
-		ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
-		toJSONList = schema[<%= SCHEMA.toJSON %>]
-		isExtensible = schema[<%= SCHEMA.extensible %>]
-		# using white list
-		if isExtensible is off
-			toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
-		else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
-			toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
-		else
-			toJSONFx = null
-		# apply
-		_defineProperty proto, 'toJSON',
-			configurable: on
-			value: toJSONFx
-		return
+# check descriptor
+_descriptorCheck (descriptor)->
+	# when required
+	if descriptor[<%= SCHEMA_DESC.required %>]
+		jsonIgnore= descriptor[<%= SCHEMA_DESC.jsonIgnore %>]
+		if (typeof jsonIgnore is 'number') and jsonIgnore & 2
+			throw new Error 'Attribute set as required and to be ignored when parsing JSON!'
+	return
+# JSON ignore
+_defineCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
+	ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
+	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>] ?= []
+	# remove this attr from JSON flags
+	_arrRemoveItem ignoreParse, attr
+	_arrRemoveItem ignoreSerialize, attr
+	# do not serialize attribute
+	if jsonIgnore & 1
+		ignoreSerialize.push attr
+	# ignore when parsing
+	if jsonIgnore & 2
+		ignoreParse.push attr
+	return
+# ToJSON
+_defineCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
+	(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON
+	return
+
 ###*
  * Virtual methods
 ###
-_defineDescriptor
-	get:
-		virtual: -> @virtual = on
-		transient: -> @virtual = on
-		persist: -> @virtual = off
-	fx:
-		# change DB representation
-		toDB: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "Expected function" unless typeof fx is 'function'
-			@toDB = fx
-			return
-	compile: (attr, schema, proto)->
-		if _owns this, 'virtual'
-			virtualAttrs = schema[<%= SCHEMA.virtual %>] ?= []
-			# remove attr from virtual list
-			_arrRemoveItem virtualAttrs, attr
-			# add if virtual
-			virtualAttrs.push attr if @virtual
-		# to DB
-		(schema[<%= SCHEMA.toDB %>] ?= []).push attr, @toDB if @toDB
+_defineDescriptors
+	virtual: (descriptor)-> descriptor[<%= SCHEMA_DESC.virtual %>] = on
+	transient: (descriptor)-> descriptor[<%= SCHEMA_DESC.virtual %>] = on
+	persist: (descriptor)-> descriptor[<%= SCHEMA_DESC.virtual %>] = off
+	# change DB representation
+	toDB: (descriptor, fx)->
+		throw new Error "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.toDB %>] = fx
 		return
-	# final adjust
-	finally: (schema, proto) ->
-		virtualAttrs = schema[<%= SCHEMA.virtual %>]
-		toDBList = schema[<%= SCHEMA.toDB %>]
-		isExtensible = schema[<%= SCHEMA.extensible %>]
-		# using white list
-		if isExtensible is off
-			toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
-		else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
-			toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
-		else
-			toDBFx = null
-		# apply
-		_defineProperty proto, 'toJSON',
-			configurable: on
-			value: toDBFx
-		return
+# Virtual
+_defineCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, attrPos)->
+	virtualAttrs = schema[<%= SCHEMA.virtual %>] ?= []
+	# remove attr from virtual list
+	_arrRemoveItem virtualAttrs, attr
+	# add if virtual
+	virtualAttrs.push attr if isVirtual
+	return
+# ToDB
+_defineCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
+	(schema[<%= SCHEMA.toDB %>] ?= []).push attr, toDBFx
+	return
+
+
 ###*
  * Set attribute as required
 ###
-_defineDescriptor
-	get:
-		required: -> @required = on
-		optional: -> @required = off
-	compile: (attr, schema, proto)->
-		if _owns this, 'required'
-			requiredAttrs = schema[<%= SCHEMA.required %>] ?= []
-			# remove attr
-			_arrRemoveItem requiredAttrs, attr
-			# add if required
-			requiredAttrs.push attr if @required
-		return
-
+_defineDescriptors
+	required: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = on
+	optional: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = off
+_defineCompiler <%= SCHEMA_DESC.required %>, (isRequired, attr, schema, proto, attrPos)->
+	requiredAttrs = schema[<%= SCHEMA.required %>] ?= []
+	# remove attr
+	_arrRemoveItem requiredAttrs, attr
+	# add if required
+	requiredAttrs.push attr if isRequired
+	return
 ###*
  * Set an object as freezed or extensible
  * @default freezed
 ###
-_defineDescriptor
-	get:
-		freeze: -> @extensible = off
-		extensible: -> @extensible = on
+_defineDescriptors
+	freeze: (descriptor)-> descriptor[<%= SCHEMA_DESC.extensible %>] = off
+	extensible: (descriptor)-> descriptor[<%= SCHEMA_DESC.extensible %>] = on
+_descriptorCheck (descriptor)->
+	if typeof descriptor[<%= SCHEMA_DESC.extensible %>] is 'boolean'
+		unless typeof descriptor[<%= SCHEMA_DESC.nestedObject %>] is 'undefined'
+			throw 'Extensible/freeze are to be used with nested object only'
+	return
+
 ###*
  * Default value
  * getters / setters
@@ -178,87 +138,71 @@ _defineDescriptor
  * .alias('attrName') # alias to this attribute
  * .alias(fx)		# getter
 ###
-_defineDescriptor
-	fx:
-		# default value
-		default: (value)->
-			<%= assertArgsLength(1) %>
-			@default = value
-			return
-		# getter
-		getter: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "function expected" unless typeof fx is 'function'
-			throw new Error "Getter expects no argument" unless fx.length is 0
-			@getter = fx
-			return
-		# generate value once and set it to this object
-		getterOnce: (value)->
-			<%= assertArgsLength(1) %>
-			@getterOnce = value
-			return
-		# setter
-		setter: (fx)->
-			throw new Error "Illegal arguments" unless arguments.length is 1
-			throw new Error "function expected" unless typeof fx is 'function'
-			throw new Error "Setter expects signature: function(value){}" unless fx.length is 1
-			@setter = fx
-			return
-		###*
-		 * Alias
-		 * @example
-		 * .alias('attrName')	# alias to this attribute
-		 * .alias(-> getter_expr)# alias to .getter(-> getter_expr)
-		###
-		alias: (value)->
-			<%= assertArgsLength(1) %>
-			# alias to attribute
-			if typeof value is 'string'
-				@getter = -> @[value]
-				@setter = (data)->
-					@[value] = data
-					return
-			else
-				throw new Error "Illegal argument for [alias] method"
-			return
-	compile: (attr, schema, proto)->
-		# getter or setter
-		if typeof @getter is 'function' or typeof @setter is 'function'
-			_defineProperty proto, attr,
-				configurable: on
-				get: @getter
-				set: @setter
-		# getter once
-		else if _owns this, 'getterOnce'
-			getterOnce = @getterOnce
-			_defineProperty proto, attr,
-				configurable: on
-				get: ->
-					vl = if typeof getterOnce is 'function' then (getterOnce.call this) else getterOnce
-					_defineProperty this, attr,
-						value: vl
-						configurable: on
-						enumerable: on
-						writable: on
-					vl
-		# default
-		else if _owns this, 'default'
-			# convert to fx
-			unless typeof @default is 'function'
-				defVak= @default
-				@default = -> defVak
-			# define
-			_defineProperty proto, attr,
-				configurable: on
-				get: @default
-				set: (value)->
-					_defineProperty this, attr,
-						value: value
-						writable: on
-						configurable: on
-						enumerable: on
-					return
+_defineDescriptors
+	# default value
+	default: (descriptor, value)->
+		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		if typeof value is 'function'
+			descr.get= value
+		else
+			descr.value= value
+			descr.writable= on
+			descr.configurable= on
+			descr.enumerable= on
 		return
+	# getter
+	getter: (descriptor, fx)->
+		throw new Error "function expected" unless typeof fx is 'function'
+		throw new Error "Getter expects no argument" unless fx.length is 0
+		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descr.get= fx
+		return
+	# generate value once and set it to this object
+	getterOnce: (descriptor, fx)->
+		throw new Error "function expected" unless typeof fx is 'function'
+		throw new Error "Getter expects no argument" unless fx.length is 0
+		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descr.get= ->
+			vl = fx.call this
+			_defineProperty this, attr,
+				value: vl
+				configurable: on
+				enumerable: on
+				writable: on
+			return vl
+		return
+	# setter
+	setter: (descriptor, fx)->
+		throw new Error "function expected" unless typeof fx is 'function'
+		throw new Error "Setter expects signature: function(value){}" unless fx.length is 1
+		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descr.set= fx
+		return
+	###*
+	 * Alias
+	 * @example
+	 * .alias('attrName')	# alias to this attribute
+	 * .alias(-> getter_expr)# alias to .getter(-> getter_expr)
+	###
+	alias: (descriptor, value)->
+		throw new Error "Alias expects property name as argument" unless typeof value is 'string'
+		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descr.get= -> @[value]
+		descr.set= (data)->
+			@[value] = data
+			return
+		return
+# check descriptor when validation
+_descriptorCheck (descriptor)->
+	defineDesc = descriptor[<%= SCHEMA_DESC.define %>]
+	# use of "default"
+	if ('value' of defineDesc) and ('get' of defineDesc or 'set' of defineDesc)
+		throw 'Could not use a getter/setter when a default value or prototype property is set.'
+	return
+# compile
+_defineCompiler <%= SCHEMA_DESC.define %>, (descrp, attr, schema, proto, attrPos)->
+	_defineProperty proto, attr, descrp
+	return
 
 ###*
  * Assertions
@@ -267,85 +211,96 @@ _defineDescriptor
  * .assert(true)
  * .assert(call(this, data, attrName)-> data.isTrue())
  * .assert((data)-> throw new Error "Error message: #{data}")
+ *
+ * # add assertions
+ * .assertions({
+ * 		min: (data, param)-> throw "data less then #{param}" if data < param
+ * 		max:
+ * 			param: (param)-> throw 'Expected number' unless typeof param is 'number'
+ * 			assert: (value, param)-> throw "data less then #{param}" if data < param
+ * 	})
 ###
-_defineDescriptor
-	fx:
-		assert: (assertion)->
-			<%= assertArgsLength(1) %>
-			# assertion object
-			if typeof assertion is 'object' and assertion
-				assertObj = @assertObj ?= _create null
-				for k,v of assertion
-					assertObj[k] = v
+_defineDescriptors
+	# assert
+	assert: (descriptor, assertion)->
+		# assertion object
+		if typeof assertion is 'object' and assertion
+			Object.assign (descriptor[<% SCHEMA_DESC.assertPredefined %>] ?= _create null), assertion
+		else
+			# convert to function
+			if typeof assertion isnt 'function'
+				vl = assertion
+				assertion = (data)-> throw new Error "Doesn't equal: #{vl}" unless data is vl
+			# add to assertions
+			(descriptor[<% SCHEMA_DESC.asserts %>] ?= []).push assertion
+		return
+	# assertions
+	assertions: (descriptor, options)->
+		throw new Error 'Expected Object' unless typeof options is 'object' and options
+		assertions= [<% SCHEMA_DESC.assertions %>] ?= _create null
+		for k,v of options
+			if typeof v is 'function'
+				v= assert: v
+			else typeof v is 'object' and v
+				throw new Error "#{k}.assert expected function" unless typeof v.assert is 'function'
+				throw new Error "#{k}.param expected function" if 'param' of v and typeof v.param isnt 'function'
 			else
-				# convert to function
-				if typeof assertion isnt 'function'
-					vl = assertion
-					assertion = (data)-> throw new Error "Not equals: #{vl}" unless data is vl
-				# add to assertions
-				(@asserts ?= []).push assertion
-			return
-		# wrappers
-		length: (value) ->
-			<%= assertArgsLength(1) %>
-			(@assertObj ?= _create null).length = value
-		min: (min)->
-			<%= assertArgsLength(1) %>
-			(@assertObj ?= _create null).min = min
-		max: (max)->
-			<%= assertArgsLength(1) %>
-			(@assertObj ?= _create null).max = max
-		between: (min, max)->
-			<%= assertArgsLength(2) %>
-			assertObj = @assertObj ?= _create null
-			assertObj.min = min
-			assertObj.max = max
-			return
-		match: (regex)->
-			<%= assertArgsLength(1) %>
-			(@assertObj ?= _create null).match = regex
-			return
-	compile: (attr, schema, proto, attrPos)->
-		# add basic asserts
-		if _owns this, 'assertObj'
-			# get type
-			type = @type || schema[attrPos + <%= SCHEMA.attrType %>]
-			throw new Error "No type specified to use predefined assertions. Use assert(function(data){}) instead" unless type
-			typeAssertions = type.assertions
-			throw new Error "No assertions predefined for type [#{type.name}]. Use assert(function(data){}) instead" unless typeAssertions
-			# go through assertions
-			schemaPropertyAsserts = schema[attrPos + <%= SCHEMA.attrPropertyAsserts %>] ?= _create null
-			# iterations
-			for k,v of @assertObj
-				throw new Error "No predefined assertion [#{k}] on type [#{type.name}]" unless _owns typeAssertions, k
-				# check value
-				assertC = typeAssertions[k]
-				assertC.check v
-				# add assertion
-				# schemaPropertyAsserts[k] = _assertGen assertC.assert, v
-				schemaPropertyAsserts[k] = v
-		# add asserts
-		if _owns this, 'asserts'
-			assertArr = schema[attrPos + <%= SCHEMA.attrAsserts %>] ?= []
-			assertArr.push el for el in @asserts
+				throw new Error "Illegal option: #{k}"
+			assertions[k]= v
 		return
+# asserts
+_defineCompiler <% SCHEMA_DESC.asserts %>, (asserts, attr, schema, proto, attrPos)->
+	assertArr = schema[attrPos + <%= SCHEMA.attrAsserts %>] ?= []
+	assertArr.push el for el in asserts
+	return
+# predefined asserts
+_defineCompiler <% SCHEMA_DESC.assertPredefined %>, (asserts, attr, schema, proto, attrPos, descriptor)->
+	assertions= descriptor[<% SCHEMA_DESC.assertions %>]
+	throw new Error 'Assertions missed: did you forget to set the type?' unless assertions
+	# go through assertions
+	schemaPropertyAsserts = schema[attrPos + <%= SCHEMA.attrPropertyAsserts %>] ?= []
+	# iterations
+	for k,v of asserts
+		ast = assertions[k]
+		throw new Error "Missing assertion: #{k}" unless ast
+		# check param
+		ast.param v if ast.param
+		# save
+		schemaPropertyAsserts.push k, v, ast.assert
+	return
 
-# # generate assertion
-# _assertGen = (assert, value)->
-# 	(obj, data, attr) -> assert.call obj, data, value, attr
-### pipe call(this, data, attrName) ###
-_defineDescriptor
-	fx:
-		pipe: (fx)->
-			<%= assertArgsLength(1) %>
-			throw new Error "Expected function" unless typeof fx is 'function'
-			(@pipe ?= []).push fx
-			return
-	compile: (attr, schema, proto, attrPos)->
-		if @pipe
-			pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
-			pipeArr.push el for el in @pipe
+###*
+ * Pipeline
+###
+_defineDescriptors
+	pipe: (descriptor, fx)->
+		throw "Expected function" unless typeof fx is 'function'
+		(descriptor[<% SCHEMA_DESC.pipe %>] ?= []).push fx
 		return
+_defineCompiler <% SCHEMA_DESC.pipe %, (pipeLine, attr, schema, proto, attrPos)->
+	pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
+	pipeArr.push el for el in pipeLine
+	return
+
+###*
+ * Reference
+###
+_defineDescriptors
+	ref: (descriptor, ref)->
+		throw 'Expected string as reference' unless typeof ref is 'string'
+		throw 'Empty reference' unless ref
+		descriptor[<% SCHEMA_DESC.ref %>] = ref
+		return
+_descriptorCheck (descriptor)->
+	if descriptor[<% SCHEMA_DESC.ref %>]
+		# nested object or list
+		#TODO
+		throw new Error 'Could not use reference, nested object and nested list at the same time'
+
+_defineCompiler <% SCHEMA_DESC.ref %>, (ref, attr, schema, proto, attrPos)->
+	schema[attrPos + <%= SCHEMA.attrRef %>]= ref
+	return
+
 ###*
  * Value
  * @example
@@ -354,64 +309,88 @@ _defineDescriptor
  * .value(Model.Int) equivalent to: Model.Int
  * .value(function(){}) equivalent to: function(){}
 ###
-_defineDescriptor
-	fx:
-		value: (arg)->
-			<%= assertArgsLength(1) %>
-			throw new Error 'Illegal use of "Model" keyword' if arg is Model
-			throw new Error "Illegal use of nested object" if @nestedObj or @arrItem or @protoMethod
-			# check if function
-			if typeof arg is 'function'
-				# check if registred type
-				if (t = _ModelTypes[arg.name]) and t.name is arg
-					arg= Model[arg.name]
-				# if date.now, set it as default value
-				else if arg is Date.now
-					arg= Model.default arg
-				# else add this function as prototype property
+_defineDescriptors
+	value: (descriptor, arg)->
+		# is function
+		if typeof arg is 'function'
+			# check if registred directive
+			if Model.hasDirective arg #TODO change this
+				arg= Model[arg.name]
+			# if date.now, set it as default value
+			else if arg is Date.now
+				arg= Model.default arg
+			# else add this function as prototype property
+			else
+				descriptor[<% SCHEMA_DESC.define %>]= value: arg
+				return
+		# if it is an array of objects
+		else if Array.isArray arg
+			switch arg.length
+				when 1
+					arg= Model.list arg[0]
+				when 0
+					arg= Model.list Model.Mixed
 				else
-					@protoMethod = arg
-					return
-			# if it is an array of objects
-			else if Array.isArray arg
-				arg = _arrToModelList arg
-			# nested object
-			else if typeof arg is 'object'
-				unless _owns arg, DESCRIPTOR
-					@_.Object
-					@nestedObj = arg
-					return
-			else
-				throw new Error "Illegal attribute descriptor"
-			# merge
-			arg = arg[DESCRIPTOR]
-			for k,v of arg
-				@[k] = v
-			return
-	compile: (attr, schema, proto, attrPos)->
-		# prototype method
-		if _owns this, 'protoMethod'
-			_defineProperty proto, attr, value: @protoMethod
+					throw new Error "One type is expected for Array, #{attrV.length} are given."
+		# nested object
+		else if typeof arg is 'object'
+			unless _owns arg, DESCRIPTOR
+				arg= Model.Object
+				descriptor[<% SCHEMA_DESC.nestedObject %>]= arg
+		# error
+		else
+			throw new Error "Illegal attribute descriptor"
 
-		# Object
-		if @nestedObj
-			# check for a schema
-			objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
-			if objSchema
-				throw new Error "Illegal convertion to object" if objSchema[<%= SCHEMA.schemaType %>] isnt 1
-				# extensibility
-				objSchema[<%= SCHEMA.extensible %>] = @extensible if _owns(this, 'extensible')
-			else
-				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
-				objSchema[<%= SCHEMA.schemaType %>] = 1 # 1: means object
-				# extensibility
-				objSchema[<%= SCHEMA.extensible %>] = if _owns(this, 'extensible') then @extensible else schema[<%= SCHEMA.extensible %>] # inherit
-			
-			# objSchema[<%= SCHEMA.extensible %>] = @extensible || off
-		# extensible is alowed only on objects
-		else if _owns this, 'extensible'
-			throw new Error '"extensible/freeze" keywords are to be used with objects only'
+		# override attributes
+		for v,i in arg[DESCRIPTOR]
+			unless typeof v is 'undefined'
+				descriptor[i]=v
 		return
+_defineCompiler <% SCHEMA_DESC.nestedObject %>, (nestedObj, attr, schema, proto, attrPos, descriptor)->
+	# check for a schema
+	objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
+	if objSchema
+		throw new Error "Illegal convertion to object" if objSchema[<%= SCHEMA.schemaType %>] isnt <%= SCHEMA.OBJECT %>
+		# extensibility
+		if typeof descriptor[<% SCHEMA_DESC.extensible %>] is 'boolean'
+			objSchema[<%= SCHEMA.extensible %>]= descriptor[<% SCHEMA_DESC.extensible %>]
+	else
+		objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
+		objSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.OBJECT %>
+		# extensibility
+		if typeof descriptor[<% SCHEMA_DESC.extensible %>] is 'boolean'
+			objSchema[<%= SCHEMA.extensible %>]= descriptor[<% SCHEMA_DESC.extensible %>]
+		else
+			objSchema[<%= SCHEMA.extensible %>]= schema[<%= SCHEMA.extensible %>] # inheritance
+	return
+
+
+###*
+ * List
+ * @example
+ * .list(Number)
+ * .list({sub-schema})
+ * .list(Model.Int)
+ * .list(Model.list(...))
+ * .list(Number, {prototype methods})
+ * .list Number
+ * 		sort: function(cb){}
+ * 		length: Model.getter(...).setter(...)
+###
+_defineDescriptors
+	list: (descriptor, arg, prototype)->
+		
+
+
+------------------------------------------------------ TODO --------------------------------------------------------------------
+Model.ignoreProps 'attr1', 'attr2' # ignore properties
+Model.filterProps 'attr1', 'attr2' # accept those properties only
+
+
+
+
+.fromDB
+.toDB
 
 ###*
  * List
@@ -498,9 +477,9 @@ _defineDescriptor
 			# items#TODO remove
 			if @arrItem
 				arrItem = @arrItem[DESCRIPTOR]
-				tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
-				objSchema[<%= SCHEMA.listCheck %>] = tp.check
-				objSchema[<%= SCHEMA.listConvert %>] = tp.convert
+				# tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
+				# objSchema[<%= SCHEMA.listCheck %>] = tp.check
+				# objSchema[<%= SCHEMA.listConvert %>] = tp.convert
 				# nested object or array
 				arrSchem = null
 				if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
@@ -512,28 +491,92 @@ _defineDescriptor
 				objSchema[<%= SCHEMA.listSchema %>]= arrSchem
 		return
 
+
+
+
 ###*
- * Reference
+ * JSON cleaner
+ * @param  {Array<String>} whiteList  - attributes to include or null
+ * @param  {Array<String>} ignoreAttr - attributes to exclude or null
+ * @param  {Array<attrName, toJSONFx, ...>} toJSONList     - Attributes with special JSON traitement
+ * @return {function}            - toJSON method
+###
+_toJSONCleaner = (whiteList, ignoreAttr, toJSONList)->
+	# process white list
+	if whiteList and ignoreAttr
+		whiteList = _arrDiff whiteList, ignoreAttr
+	# toJSON/toDB function
+	->
+		clone = _create null
+		# white list
+		if whiteList
+			for k,v of this
+				if (_owns this, k) and k in whiteList
+					clone[k] = v
+		# ignored list
+		else if ignoreAttr
+			for k,v of this
+				if (_owns this, k) and k not in ignoreAttr
+					clone[k] = v
+		# just clone
+		else
+			Object.assign clone, this
+		# attr with special fx
+		if toJSONList and toJSONList.length
+			len = toJSONList.length
+			i = 0
+			while i < len
+				# load attr and fx
+				attr = toJSONList[i]
+				fx = toJSONList[++i]
+				++i
+				# apply
+				if attr of clone
+					clone[attr] = fx.call this, clone[attr], attr
+		# return
+		clone
+
+		
+
+###*
+ * JSON ignore
 ###
 _defineDescriptor
-	fx:
-		ref: (ref)->
-			<%= assertArgsLength(1) %>
-			throw new Error 'Expected string reference' unless typeof ref is 'string'
-			@ref = ref
-			return
-	compile: (attr, schema, proto, attrPos)->
-		if _owns this, 'ref'
-			throw new Error "Could not use ref when nested object, nested array or snapshot are set" if @nestedObj or @arrItem or @snapshot
-			schema[attrPos + <%= SCHEMA.attrRef %>] ?= @ref
-		return
-
-# convert data to Model list
-_arrToModelList= (attrV)->
-	switch attrV.length
-		when 1
-			Model.list attrV[0]
-		when 0
-			Model.list Model.Mixed
+	# final adjust
+	finally: (schema, proto) ->
+		ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
+		toJSONList = schema[<%= SCHEMA.toJSON %>]
+		isExtensible = schema[<%= SCHEMA.extensible %>]
+		# using white list
+		if isExtensible is off
+			toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
+		else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
+			toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
 		else
-			throw new Error "One type is expected for Array, #{attrV.length} are given."
+			toJSONFx = null
+		# apply
+		_defineProperty proto, 'toJSON',
+			configurable: on
+			value: toJSONFx
+		return
+###*
+ * Virtual methods
+###
+_defineDescriptor
+	# final adjust
+	finally: (schema, proto) ->
+		virtualAttrs = schema[<%= SCHEMA.virtual %>]
+		toDBList = schema[<%= SCHEMA.toDB %>]
+		isExtensible = schema[<%= SCHEMA.extensible %>]
+		# using white list
+		if isExtensible is off
+			toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
+		else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
+			toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
+		else
+			toDBFx = null
+		# apply
+		_defineProperty proto, 'toJSON',
+			configurable: on
+			value: toDBFx
+		return

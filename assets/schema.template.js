@@ -49,11 +49,37 @@ var schemaAttrDescrptr =[
 	'attrCheck',	// check attribute type
 	'attrConvert',	// convert attribute type
 	'attrAsserts',	// list of assertion functions
-	'attrPropertyAsserts',	// object representing static asserts (like str length, min, max, ...)
+	'attrPropertyAsserts',	// predefined asserts: ['assertName', assertValue, assertFx, ...] exple: ['min', 4, minFx, 'max', 521, maxFx]
 	'attrPipe',		// list of pipe functions
 	'attrSchema',	// sub-schema
 	'attrRef',		// reference
 	'attrSnapshot'	// snapshot
+];
+
+var SCHEMA_DESCRIPTOR_K= [
+	'check'
+	'convert'
+	'required'
+	'extensible'
+	// JSON
+	'jsonIgnore'
+	'toJSON'
+	// Database
+	'virtual'
+	'toDB'
+	// Getter/Setter, define prototype property
+	'define'
+	// assert
+	'asserts' // asserts queue
+	'assertPredefined'// predefined asserts
+	'assertions'
+	// pipe
+	'pipe'
+	// reference
+	'ref'
+	// nested
+	'nestedObject'
+
 ];
 
 
@@ -78,4 +104,10 @@ SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length)
 SCHEMA.attrPropertyCount = schemaAttrDescrptr.length // attribute properties count
 SCHEMA.OBJECT = 1
 SCHEMA.LIST = 2
-SCHEMA.SNAPSHOT= 3
+
+// schema descriptor
+var SCHEMA_DESCRIPTOR= Object.create(null);
+for(var len = SCHEMA_DESCRIPTOR_K.length, i= 0; i< len; ++i){
+	k = SCHEMA_DESCRIPTOR_K[i];
+	SCHEMA_DESC[k] = i
+}
