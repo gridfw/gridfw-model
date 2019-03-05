@@ -13,18 +13,10 @@ _defineDescriptors
 # check
 _defineCompiler <%= SCHEMA_DESC.check %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrCheck %>] = descriptorV
-	# list, TODO
-	if @arrItem
-		objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
-		objSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
 	return
 # convert
 _defineCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrConvert %>] = descriptorV
-	# list, TODO
-	if @arrItem
-		objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
-		objSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
 	return
 
 ###*
@@ -363,7 +355,11 @@ _defineCompiler <% SCHEMA_DESC.nestedObject %>, (nestedObj, attr, schema, proto,
 		else
 			objSchema[<%= SCHEMA.extensible %>]= schema[<%= SCHEMA.extensible %>] # inheritance
 	return
-
+# check descriptor
+_descriptorCheck (descriptor)->
+	if descriptor[<% SCHEMA_DESC.nestedObject %>] and descriptor[<%= SCHEMA_DESC.check %>] isnt _CHECK_IS_OBJECT
+		throw new Error 'Illegal type for the nested object'
+	return
 
 ###*
  * List
@@ -379,10 +375,66 @@ _defineCompiler <% SCHEMA_DESC.nestedObject %>, (nestedObj, attr, schema, proto,
 ###
 _defineDescriptors
 	list: (descriptor, arg, prototype)->
-		
+		# add prototype
+		if prototype? and _isPlainObject prototype
+			proto= descriptor[<% SCHEMA_DESC.listProto %>] ?= _create null
+			_defineProperties proto, Object.getOwnPropertyDescriptors prototype
+			for k,v of prototype
+				# define as method
+				if typeof v is 'function'
+					_defineProperty proto, k,
+						value: v
+						configurable: yes
+				# define getter and setter
+				else if typeof v is 'object' and v and ('get' of v or 'set' of v)
+					_defineProperty proto, k,
+						get: v.get
+						set: v.set
+						configurable: yes
+				# error
+				else
+					throw new Error 'Only "functions" or an object {get, set} are accepted as list prototype arguments'
+		# add nested arguments
+		if arg?
+			descriptor[<% SCHEMA_DESC.nestedList %>]= Model.value arg
+		return
+# list
+_defineCompiler <% SCHEMA_DESC.nestedList %>, (arrItem, attr, schema, proto, attrPos, descriptor)->
+	# create object schema
+	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+	if objSchema
+		throw new Error "Illegal convertion to Array" unless objSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
+	else
+		objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
+		objSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.LIST %>
+		objSchema[<%= SCHEMA.proto %>] = _create _arrayPro
+	# content
+	arrItem = arrItem[DESCRIPTOR]
+	objSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
+	objSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
+	# nested object or array if set
+	arrSchem = null
+	if arrItem[<%= SCHEMA_DESC.check %>] in [_CHECK_IS_OBJECT, _CHECK_IS_LIST]
+		if arrItem[<%= SCHEMA_DESC.ref %>]
+			objSchema[<%= SCHEMA.listRef %>]= arrItem[<%= SCHEMA_DESC.ref %>]
+		else
+			arrSchem ?= [] #new Array <%= SCHEMA.sub %>
+	objSchema[<%= SCHEMA.listSchema %>]= arrSchem
+	return
+# list proto
+_defineCompiler <% SCHEMA_DESC.listProto %>, (listProto, attr, schema, proto, attrPos, descriptor)->
+	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+	_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors listProto
+	return
+
+# check descriptor
+_descriptorCheck (descriptor)->
+	if descriptor[<% SCHEMA_DESC.nestedList %>] and descriptor[<%= SCHEMA_DESC.check %>] isnt _CHECK_IS_LIST
+		throw new Error 'Illegal type for the nested list'
+	return
 
 
------------------------------------------------------- TODO --------------------------------------------------------------------
+------------------------------------------- TODO ---------------------------------------------------
 Model.ignoreProps 'attr1', 'attr2' # ignore properties
 Model.filterProps 'attr1', 'attr2' # accept those properties only
 

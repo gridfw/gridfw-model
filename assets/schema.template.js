@@ -79,6 +79,8 @@ var SCHEMA_DESCRIPTOR_K= [
 	'ref'
 	// nested
 	'nestedObject'
+	'nestedList'
+	'listProto' // list prototype
 
 ];
 

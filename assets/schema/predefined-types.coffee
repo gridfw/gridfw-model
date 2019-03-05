@@ -9,17 +9,19 @@ _checkIsNumber
 ###*
  * Predefine types
 ###
+_CHECK_IS_OBJECT= (data)-> typeof data is 'object' and not Array.isArray data
+_CHECK_IS_LIST= (data)-> Array.isArray data
 
 Model
 ###
 # Basic types
 ###
 .directive Object, ->
-	Model.check (data)-> typeof data is 'object' and not Array.isArray data
+	Model.check _CHECK_IS_OBJECT
 	.convert -> throw 'Invalid Object'
 .directive Array, ->
 	# accept to have the element directly when array contains just one element
-	Model.check (data)-> Array.isArray data
+	Model.check _CHECK_IS_LIST
 	.convert (data)-> if data? then [data] else []
 	.assertions
 		min:
