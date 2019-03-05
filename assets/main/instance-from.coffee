@@ -205,17 +205,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 					++i
 					++j
 					<% } %>
-			### Snapshot ###
-			else if schemaType is <%= SCHEMA.SNAPSHOT %>
-				# Do not validate snapshots
-				# Snapshots are processed only by DB logic
-				# nxSchema= schema[<%= SCHEMA.snapSchema %>]
-				# unless nxSchema
-				# 	nxRef= schema[<%= SCHEMA.snapTargetName %>]
-				# 	nxMd = model.all[nxRef]
-				# 	throw "Target model snapshot resolve fails: #{nxRef}" unless nxMd
-				# 	nxSchema= nxMd[SCHEMA]
-				
 			### Unsupported schema type ###
 			else
 				throw new Error 'Illegal schema type'

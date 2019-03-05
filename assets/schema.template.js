@@ -56,17 +56,6 @@ var schemaAttrDescrptr =[
 	'attrSnapshot'	// snapshot
 ];
 
-// snapshot descriptor
-var snapshotDescriptor= [
-	'schemaType',	// = SCHEMA.SNAPSHOT
-	'snapName', 	// snapshot name
-	'snapToDB',		// fx to convert data to a persistable format
-	'snapFromDB',	// async fx that will resolve data from db
-	'snapToJSON',	// json representation of snap
-	'snapFromJSON',	// parse snap from JSON, get reste of data from DB when required
-	'snapTargetName',// target Model name
-	'snapSchema'	// link to target schema
-];
 
 // create schema info
 var SCHEMA = Object.create(null);
@@ -82,16 +71,11 @@ for(var len = schemaAttrDescrptr.length, i= 0; i< len; ++i){
 	k = schemaAttrDescrptr[i];
 	SCHEMA[k] = i
 }
-for(var len = snapshotDescriptor.length, i= 0; i< len; ++i){
-	k = snapshotDescriptor[i];
-	SCHEMA[k] = i
-}
 
 
 // index where attributes starts
 SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length)
 SCHEMA.attrPropertyCount = schemaAttrDescrptr.length // attribute properties count
-SCHEMA.snapAttr = snapshotDescriptor.length // index of first attribute
 SCHEMA.OBJECT = 1
 SCHEMA.LIST = 2
 SCHEMA.SNAPSHOT= 3
