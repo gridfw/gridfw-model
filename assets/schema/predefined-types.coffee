@@ -16,10 +16,10 @@ Model
 ###
 # Basic types
 ###
-.directive Object, ->
+.directive Object,
 	Model.check _CHECK_IS_OBJECT
 	.convert -> throw 'Invalid Object'
-.directive Array, ->
+.directive Array,
 	# accept to have the element directly when array contains just one element
 	Model.check _CHECK_IS_LIST
 	.convert (data)-> if data? then [data] else []
@@ -33,12 +33,12 @@ Model
 		length:
 			param: _checkIsNumber
 			assert: (data, len) -> throw "Array length [#{data.length}] expected #{len}" if data.length isnt len
-.directive 'Mixed', ->
-	Model.check: -> true
+.directive 'Mixed',
+	Model.check -> true
 ###
 # Boolean
 ###
-.directive Boolean, ->
+.directive Boolean,
 	Model.check (data) -> typeof data is 'boolean'
 	.convert (data) ->
 		throw 'Expected boolean, got Object' if typeof data is 'object' and data
@@ -46,7 +46,7 @@ Model
 ###
 # Number
 ###
-.directive Number, ->
+.directive Number,
 	Model.check (data) -> typeof data is 'number'
 	.convert (data) ->
 		value = +data
@@ -60,21 +60,21 @@ Model
 			param: _checkIsNumber
 			assert: (data, max) -> throw "value exceeds #{max}" if data > max
 .directives
-	Int: ->
+	Int:
 		Model.Number
 		.check (data) -> Number.isSafeInteger data
 		.convert (data) ->
 			value = +data
 			throw "Invalid integer #{data}" unless Number.isSafeInteger value
 			value
-	Unsigned: ->
+	Unsigned:
 		Model.Number
 		.check (data) -> Number.isSafeInteger data and data >= 0
 		.convert (data) ->
 			value = +data
 			throw "Invalid positive integer #{data}" unless Number.isSafeInteger value and data >= 0
 			value
-	Hex: ->
+	Hex:
 		Model.check (data) -> typeof data is 'string' and HEX_CHECK.test data
 		.convert (data) ->
 			throw "Invalid Hex: #{data}" unless typeof data is 'number'
@@ -89,7 +89,7 @@ Model
 ###
 # Date
 ###
-.directive Date, ->
+.directive Date,
 	Model.check (data) -> data instanceof Date
 	.convert (data) ->
 		v= new Date data
@@ -146,7 +146,7 @@ Model
 ###
 # Text, String
 ###
-.directive 'Text', ->
+.directive 'Text',
 	Model.check (data) -> typeof data is 'string'
 	.convert (data) ->
 		throw 'Expected String, got Object.' if typeof data is 'object'
@@ -166,24 +166,24 @@ Model
 		match:
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
 			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
-.directive String, -> # String, HTML escaped
+.directive String, # String, HTML escaped
 	Model.Text.pipe (data) -> xssEscape data
 .directives
 	# HTML: remove keep only safe HTML, remove images
-	HTML: ->
+	HTML:
 		Model.Text.assert max: HTML_MAX_LENGTH
 		.pipe (data)-> xssClean data, imgs: off
 	# HTMLImgs: remove keep only safe HTML and images
-	HTMLImgs: ->
+	HTMLImgs:
 		Model.Text.assert max: HTML_MAX_LENGTH
 		.pipe (data)-> xssClean data, imgs: on
 	# Email
-	Email: ->
+	Email:
 		Model.Text.check (data) -> typeof data is 'string' and EMAIL_CHECK.test data
 		.convert (data) -> throw "Invalid Email: #{data}"
 		.assert max: STRING_MAX
 	# Password
-	Password: ->
+	Password:
 		Model.Text.convert (data) -> throw "Invalid Password: #{data}"
 		.assert
 			min: PASSWD_MIN
@@ -191,13 +191,13 @@ Model
 ###
 # URL
 ###
-.directive URL, ->
+.directive URL,
 	Model.check (data) -> data instanceof URL
 	.convert (data) ->
 		throw "Illegal URL: #{data}" unless typeof data is 'string'
 		new URL data
-	.toJSON	: (data) -> data.href
-	.toDB	: (data) -> data.href
+	.toJSON (data) -> data.href
+	.toDB (data) -> data.href
 	.assert max: URL_MAX_LENGTH
 	.assertions
 		min:
@@ -218,12 +218,13 @@ Model
 		match:
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
 			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
-.directive 'Image', -> Model.URL.assert max: DATA_URL_MEX_LENGTH
+.directive 'Image',
+	Model.URL.assert max: DATA_URL_MEX_LENGTH
 ###
 # UUID
 ###
 .directives
-	ObjectId: ->
+	ObjectId:
 		Model.check (data) -> typeof data is 'object' and data._bsontype is 'ObjectID'
 		.convert (data) -> ObjectId.createFromHexString data
 	# UUID: ->

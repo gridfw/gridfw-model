@@ -22,4 +22,5 @@ EMAIL_CHECK = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\
 # symbols
 SCHEMA = Symbol 'Model schema'
 DESCRIPTOR = Symbol 'Descriptor'
+DIRECTIVES= Symbol 'Directives'
 TYPE_ATTR = '_type' # extra attr inside object, refers its Model

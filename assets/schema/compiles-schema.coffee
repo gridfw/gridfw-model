@@ -65,7 +65,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	proto = compiledSchema[<%= SCHEMA.proto %>] ?= _create _plainObjPrototype
 	# go through object attributes
 	attrPos = Math.max <%= SCHEMA.sub %>, compiledSchema.length
-	for attrN, attrV of nestedDescriptor.nestedObj
+	for attrN, attrV of nestedDescriptor[<% SCHEMA_DESC.nestedObject %>]
 		try
 			# check if attribute already exists (case of override)
 			attrIndex = 0
@@ -86,22 +86,31 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			attrV = Model.value attrV unless _owns attrV, DESCRIPTOR
 			# get descriptor
 			attrV =attrV[DESCRIPTOR]
-			# compile: (attr, schema, proto, attrIndex)
-			for comp in _descriptorCompilers
-				comp.call attrV, attrN, compiledSchema, proto, attrIndex
+			# check descriptor
+			for comp in _descriptorchechers
+				comp attrV
+			# compile: index, (value, attr, schema, proto, attrIndex, descriptor)
+			descrpI = 0
+			descrpLen= _descriptorCompilers.length
+			while descrpI < descrpLen
+				idx= _descriptorCompilers[descrpI++]
+				fx= _descriptorCompilers[descrpI++]
+				vl= attrV[idx]
+				if vl isnt undefined
+					fx vl, attrN, compiledSchema, proto, attrIndex, attrV
 			# next schema
 			nxtSchema = compiledSchema[attrIndex + <%= SCHEMA.attrSchema %>]
 			if nxtSchema and not compiledSchema[attrIndex + <%= SCHEMA.attrRef %>] # not a reference
 				# nested object
 				if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.OBJECT %>
-					throw new Error 'Nested obj required' unless attrV.nestedObj
-					seekQueue.push attrV.nestedObj, nxtSchema, path.concat attrN
+					throw new Error 'Nested obj required' unless attrV[<% SCHEMA_DESC.nestedObject %>]
+					seekQueue.push attrV[<% SCHEMA_DESC.nestedObject %>], nxtSchema, path.concat attrN
 				# nested array
 				else if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
 					arrSchem = nxtSchema[<%= SCHEMA.listSchema %>]
 					if arrSchem
-						throw new Error 'Nested obj required' unless attrV.arrItem
-						seekQueue.push attrV.arrItem, arrSchem, path.concat attrN, '*'
+						throw new Error 'Nested obj required' unless attrV[<% SCHEMA_DESC.nestedList %>]
+						seekQueue.push attrV[<% SCHEMA_DESC.nestedList %>], arrSchem, path.concat attrN, '*'
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"
@@ -112,7 +121,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	# final adjustements
 	for comp in _descriptorFinally
 		try
-			comp compiledSchema, proto
+			comp compiledSchema
 		catch e
 			errors.push
 				path: path
@@ -122,23 +131,28 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
  * Compile nested array
 ###
 _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
-	throw new 'Inexpected array schema' unless _owns nestedDescriptor, 'arrItem'
-	compiledSchema[<%= SCHEMA.schemaType %>] = 2 # uncompiled Array
-	compiledSchema[<%= SCHEMA.proto %>] ?= nestedDescriptor.arrProto
+	throw new 'Inexpected array schema' unless nestedDescriptor[<% SCHEMA_DESC.nestedList %>]
+	compiledSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.LIST %> # uncompiled Array
+	compiledSchema[<%= SCHEMA.proto %>] ?= nestedDescriptor[<% SCHEMA_DESC.listProto %>]
 	
 	# item type
-	arrItem = nestedDescriptor.arrItem
+	arrItem = nestedDescriptor[<% SCHEMA_DESC.nestedList %>]
 	if arrItem
 		arrItem= arrItem[DESCRIPTOR]
-		tp= compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
-		compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
-		compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
+		# tp= compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
+		# compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
+		# compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
+		compiledSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
+		compiledSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
 		# nested object or array
-		if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-			arrSchem = compiledSchema[<%= SCHEMA.listSchema %>] ?= [] #new Array <%= SCHEMA.sub %>
+		arrSchem = compiledSchema[<%= SCHEMA.listSchema %>]
+		if arrItem[<%= SCHEMA_DESC.check %>] in [_CHECK_IS_OBJECT, _CHECK_IS_LIST]
+			if arrItem[<%= SCHEMA_DESC.ref %>]
+				compiledSchema[<%= SCHEMA.listRef %>]= arrItem[<%= SCHEMA_DESC.ref %>]
+				arrSchem= undefined
+			else
+				arrSchem ?= [] #new Array <%= SCHEMA.sub %>
 			# add to queue
-			seekQueue.push arrItem.arrItem || arrItem.nestedObj, arrSchem, path.concat '*'
-		else
-			arrSchem = null
+			seekQueue.push arrItem[<% SCHEMA_DESC.nestedList %>] || arrItem[<% SCHEMA_DESC.nestedObject %>], arrSchem, path.concat '*'
 		compiledSchema[<%= SCHEMA.listSchema %>]= arrSchem
 	return

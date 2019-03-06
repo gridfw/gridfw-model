@@ -1,61 +1,69 @@
-
 ###*
  * Define descriptor
- * @param {object} options.get	- descriptors using GET method
- * @param {object} options.fx	- descriptors using functions
- * @param {function} options.compile	- compilation of result
 ###
-_descriptorCompilers = [] # set of descriptor compilers
-_descriptorFinally = [] # final adjustements
-_defineDescriptor= (options)->
-	# getters
-	if 'get' of options
-		for k,v of options.get
+_defineDescriptor= (k, v)->
+	throw new Error "Expected function for: #{k}" unless typeof v is 'function'
+	# interface
+	switch v.length
+		when 0
+			throw new Error "Illegal function at: #{k}"
+		# getter
+		when 1
 			_defineProperty _schemaDescriptor, k, get: _defineDescriptorWrapper v
-	# functions
-	if 'fx' of options
-		for k,v of options.fx
+		# function
+		else
 			_defineProperty _schemaDescriptor, k, value: _defineDescriptorWrapper v
-	# compile
-	if 'compile' of options
-		_descriptorCompilers.push options.compile
-	# final adjustement
-	if 'finally' of options
-		_descriptorFinally.push options.finally
 	return
-### wrapper ###
+###*
+ * Define descriptors
+###
+_defineDescriptors= (descriptors)->
+	for k,v of descriptors
+		_defineDescriptors k, v
+	return
+# compiler
+_descriptorCompilers = [] # set of descriptor compilers
+_defineCompiler= (index, cb)->
+	_descriptorCompilers.push index, cb
+	return
+
+# descriptor check
+_descriptorchechers = [] # set of descriptor compilers
+_descriptorCheck= (cb)->
+	_descriptorchechers.push cb
+	return
+
+# finally check
+_descriptorFinally = [] # final adjustements
+_defineDescriptorFinally= (descriptor)->
+	_descriptorFinally.push cb
+	return
+
+# schema wrapper
 _defaultDescriptor = ->
 	# create descriptor
-	desc = _create null,
-		_pipe: value: []
+	desc = []
 	# return schema descriptor
 	obj = _create _schemaDescriptor,
 		[DESCRIPTOR]: value: desc
-	desc._ = obj
+	desc[<%= SCHEMA_DESCRIPTOR_K.parent %>]= obj
 	return obj
-_defineDescriptorWrapper = (fx) ->
+_defineDescriptorWrapper= (fx)->
 	->
-		dsrp= @[DESCRIPTOR]
+		# check arguments count
+		reqArgs = fx.length - 1
+		throw new Error "Expected #{reqArgs} arguments" unless arguments.length is reqArgs
 		# descriptor
+		dsrp= @[DESCRIPTOR]
 		if dsrp
 			desc= this
 		else
 			desc= _defaultDescriptor()
 			dsrp= desc[DESCRIPTOR]
 		# exec fx
-		fx.apply dsrp, arguments
-		# save representation for debug purpose
-		if arguments.length
-			nm = """#{fx.name}(#{Array.from(arguments).map((e)->
-				if typeof e is 'function'
-					"[FUNCTION #{e.name||'Unnamed'}]"
-				else
-					e?.toString?() || typeof e
-			).join ', '})"""
-		else
-			nm = fx.name
-		dsrp._pipe.push nm
-		# chain
-		desc
+		fx dsrp, arguments...
+		#TODO add debug 
+		# Chain
+		return desc
 
-	
+ds= cb.apply desc[1], Array.from(arguments)[1...]

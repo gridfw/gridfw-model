@@ -40,6 +40,24 @@ _descriptorCheck (descriptor)->
 		if (typeof jsonIgnore is 'number') and jsonIgnore & 2
 			throw new Error 'Attribute set as required and to be ignored when parsing JSON!'
 	return
+# final adjustement
+_defineDescriptorFinally (schema)->
+	proto = schema[<%= SCHEMA.proto %>]
+	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
+	toJSONList = schema[<%= SCHEMA.toJSON %>]
+	isExtensible = schema[<%= SCHEMA.extensible %>]
+	# using white list
+	if isExtensible is off
+		toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
+	else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
+		toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
+	else
+		toJSONFx = null
+	# apply
+	_defineProperty proto, 'toJSON',
+		configurable: on
+		value: toJSONFx
+	return
 # JSON ignore
 _defineCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
 	ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
@@ -83,7 +101,24 @@ _defineCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, att
 _defineCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
 	(schema[<%= SCHEMA.toDB %>] ?= []).push attr, toDBFx
 	return
-
+# final adjustement
+_defineDescriptorFinally (schema)->
+	proto = schema[<%= SCHEMA.proto %>]
+	virtualAttrs = schema[<%= SCHEMA.virtual %>]
+	toDBList = schema[<%= SCHEMA.toDB %>]
+	isExtensible = schema[<%= SCHEMA.extensible %>]
+	# using white list
+	if isExtensible is off
+		toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
+	else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
+		toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
+	else
+		toDBFx = null
+	# apply
+	_defineProperty proto, 'toJSON',
+		configurable: on
+		value: toDBFx
+	return
 
 ###*
  * Set attribute as required
@@ -413,10 +448,11 @@ _defineCompiler <% SCHEMA_DESC.nestedList %>, (arrItem, attr, schema, proto, att
 	objSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
 	objSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
 	# nested object or array if set
-	arrSchem = null
+	arrSchem = objSchema[<%= SCHEMA.listSchema %>]
 	if arrItem[<%= SCHEMA_DESC.check %>] in [_CHECK_IS_OBJECT, _CHECK_IS_LIST]
 		if arrItem[<%= SCHEMA_DESC.ref %>]
 			objSchema[<%= SCHEMA.listRef %>]= arrItem[<%= SCHEMA_DESC.ref %>]
+			arrSchem= undefined
 		else
 			arrSchem ?= [] #new Array <%= SCHEMA.sub %>
 	objSchema[<%= SCHEMA.listSchema %>]= arrSchem
@@ -432,118 +468,6 @@ _descriptorCheck (descriptor)->
 	if descriptor[<% SCHEMA_DESC.nestedList %>] and descriptor[<%= SCHEMA_DESC.check %>] isnt _CHECK_IS_LIST
 		throw new Error 'Illegal type for the nested list'
 	return
-
-
-------------------------------------------- TODO ---------------------------------------------------
-Model.ignoreProps 'attr1', 'attr2' # ignore properties
-Model.filterProps 'attr1', 'attr2' # accept those properties only
-
-
-
-
-.fromDB
-.toDB
-
-###*
- * List
- * @example
- * .list(Number)
- * .list({sub-schema})
- * .list(Model.Int)
- * .list(Model.list(...))
- * .list(Number, {prototype methods})
- * .list Number
- * 		sort: function(cb){}
- * 		length: Model.getter(...).setter(...)
-###
-_defineDescriptor
-	fx:
-		list: (arg, prototype)->
-			<%= assertArgsLength(1, 2) %>
-			throw new Error "Illegal use of list" if @nestedObj or @arrItem
-			# set type as array
-			@_.Array
-			# check prototype
-			proto = _create null
-			if arguments.length is 2
-				throw new Error "Illegal prototype" unless _isPlainObject prototype
-				for k,v of prototype
-					# getter/setter
-					if v and typeof v is 'object'
-						if v[DESCRIPTOR]
-							v = v[DESCRIPTOR]
-							# check for getter and setter only
-							throw new Error "Only 'getter' and 'setter' are accepted as list prototype attribute. [#{ek}] detected." unless ek in ['_', 'getter', 'setter'] for ek, ev of v
-							if v.getter or v.setter
-								_defineProperty proto, k,
-									get: v.getter
-									set: v.setter
-							else
-								throw new Error "getter or setter is required"
-						else
-							throw new Error "Illegal list prototype attribute: #{k}, use Model.getter(...) instead"
-					# reject types
-					else if v is Model or (ref = _ModelTypes[v.name] and ref.name is v)
-						throw new Error "Only methods, setters, getters are expected as list prototype property"
-					# method or static value
-					else
-						_defineProperty proto, k, value: v
-			_setPrototypeOf proto, _arrayProto
-			@arrProto = proto
-			# # arg
-			# # predefined type
-			# if typeof arg is 'function'
-			# 	throw new Error 'Illegal argument' unless (t = _ModelTypes[arg.name]) and t.name is arg
-			# 	arg = Model[arg.name]
-			# # nested list
-			# else if Array.isArray arg
-			# 	arg = _arrToModelList arg
-			# else if typeof arg is 'object' and 
-			# else unless arg and typeof arg is 'object' and _owns arg, DESCRIPTOR
-			# 	throw new Error "Illegal argument: #{arg}"
-			if arg in [null, undefined]
-				@arrItem = null
-			else
-				@arrItem = Model.value arg
-			return
-
-	compile: (attr, schema, proto, attrPos)->
-		if _owns this, 'arrItem'
-			throw new Error 'Illegal use of nested Arrays' unless @type is _ModelTypes.Array
-
-			# create object schema
-			objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
-			if objSchema
-				console.log "#{attr}>> already"
-				throw new Error "Illegal convertion to Array" if objSchema[<%= SCHEMA.schemaType %>] isnt 2
-				# proto
-				_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors @arrProto
-				@arrProto = objSchema[<%= SCHEMA.proto %>]
-			else
-				console.log "#{attr}>> new "
-				objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
-				objSchema[<%= SCHEMA.schemaType %>] = 2 # -2: means list not yeat compiled
-				objSchema[<%= SCHEMA.proto %>] = @arrProto
-				throw new Error "Array type not set!" if @arrItem is null
-			
-			# items#TODO remove
-			if @arrItem
-				arrItem = @arrItem[DESCRIPTOR]
-				# tp = objSchema[<%= SCHEMA.listType %>] = arrItem.type
-				# objSchema[<%= SCHEMA.listCheck %>] = tp.check
-				# objSchema[<%= SCHEMA.listConvert %>] = tp.convert
-				# nested object or array
-				arrSchem = null
-				if arrItem.type in [_ModelTypes.Object, _ModelTypes.Array]
-					if 'ref' of arrItem
-						objSchema[<%= SCHEMA.listRef %>]= arrItem.ref
-					else
-						arrSchem ?= [] #new Array <%= SCHEMA.sub %>
-					
-				objSchema[<%= SCHEMA.listSchema %>]= arrSchem
-		return
-
-
 
 
 ###*
@@ -587,48 +511,3 @@ _toJSONCleaner = (whiteList, ignoreAttr, toJSONList)->
 					clone[attr] = fx.call this, clone[attr], attr
 		# return
 		clone
-
-		
-
-###*
- * JSON ignore
-###
-_defineDescriptor
-	# final adjust
-	finally: (schema, proto) ->
-		ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
-		toJSONList = schema[<%= SCHEMA.toJSON %>]
-		isExtensible = schema[<%= SCHEMA.extensible %>]
-		# using white list
-		if isExtensible is off
-			toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
-		else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
-			toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
-		else
-			toJSONFx = null
-		# apply
-		_defineProperty proto, 'toJSON',
-			configurable: on
-			value: toJSONFx
-		return
-###*
- * Virtual methods
-###
-_defineDescriptor
-	# final adjust
-	finally: (schema, proto) ->
-		virtualAttrs = schema[<%= SCHEMA.virtual %>]
-		toDBList = schema[<%= SCHEMA.toDB %>]
-		isExtensible = schema[<%= SCHEMA.extensible %>]
-		# using white list
-		if isExtensible is off
-			toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
-		else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
-			toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
-		else
-			toDBFx = null
-		# apply
-		_defineProperty proto, 'toJSON',
-			configurable: on
-			value: toDBFx
-		return

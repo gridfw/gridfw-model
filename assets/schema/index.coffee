@@ -1,6 +1,7 @@
 
 # includes
 #=include schema-descriptors.coffee
+#=include add-directive.coffee
 #=include predefined-descriptors.coffee
 #=include predefined-directive-wrappers.coffee
 #=include predefined-types.coffee
