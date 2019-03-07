@@ -14,7 +14,7 @@ _schemaDescriptor = _create null
 
 # create basic Model
 Model = _create _schemaDescriptor,
-	all: value: _create: null # Store all shared models
+	all: value: _create null # Store all shared models
 	newChild: value: ->
 		mdle = _create this,
 			all: value: _create null # store all Model factories

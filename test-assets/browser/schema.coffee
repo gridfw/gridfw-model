@@ -1,6 +1,6 @@
 try
 	# ...
-	console.log 'Begin tests'
+	console.log 'Begin tests-----'
 
 	# console.log '-----', Object.getOwnPropertyDescriptors Model.__proto__
 
@@ -19,8 +19,7 @@ try
 			emails: Model.list ({
 				type: String
 				value: String
-				}),
-				cc:->
+				})
 			
 			# test: Model.freeze.value
 			# 	kk:
