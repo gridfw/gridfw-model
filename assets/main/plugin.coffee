@@ -2,8 +2,8 @@
  * Add Model plugin
 ###
 _defineProperty Model, 'plugin', value: (options)->
-	<%= assertArgsLength(1) %>
-	throw new Error 'Expected object' unless typeof options is 'object' and options
+	<%= assertArgTypes('plugin', 'plain object') %>
+	throw new Error 'plugin>> Argument is null' unless options
 	# Model properties
 	if 'Model' of options
 		_defineProperties Model, Object.getOwnPropertyDescriptors options.Model

@@ -34,8 +34,8 @@ compileCoffee = ->
 	# gulp.src ["assets/node.coffee", 'assets/browser.coffee']
 	gulp.src ["assets/browser.coffee"]
 		.pipe include hardFail: true
-		.pipe gulp.dest "build"
 		.pipe GfwCompiler.template(settings).on 'error', GfwCompiler.logError
+		.pipe gulp.dest "build"
 		
 		.pipe coffeescript(bare: true).on 'error', GfwCompiler.logError
 		.pipe gulp.dest "build"

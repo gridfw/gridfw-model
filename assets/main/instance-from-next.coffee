@@ -1,8 +1,8 @@
 
 <%
-var schemaIdx = isList ? SCHEMA.listSchema: 'i + '+ SCHEMA.attrSchema
-var schemaRef = isList ? SCHEMA.listRef: 'i + '+ SCHEMA.attrRef
-var schemaSnapshot = isList ? SCHEMA.listSnapshot: 'i + '+ SCHEMA.attrSnapshot
+var schemaIdx = isList ? SCHEMA.listSchema : 'i + '+ SCHEMA.attrSchema;
+var schemaRef = isList ? SCHEMA.listRef : 'i + '+ SCHEMA.attrRef;
+var schemaSnapshot = isList ? SCHEMA.listSnapshot : 'i + '+ SCHEMA.attrSnapshot;
 
 %>
 if typeof attrObj is 'object' and attrObj

@@ -1,3 +1,5 @@
+### Map used functions as directives ###
+_fxDirectiveMapper= _create null
 ###*
  * Add new directives
  * @example
@@ -10,18 +12,23 @@
 _defineProperties _schemaDescriptor,
 	# create directive
 	directive: value: (name, cb)->
+		<%= assertArgsLength('directive', 2) %>
 		directives = @[DIRECTIVES] ?= _create null
 		# string name
 		if typeof name is 'string'
 			strName= name
+			# check not already set
+			throw new Error "Directive already set: #{strName}" if strName of _schemaDescriptor # _owns _schemaDescriptor, strName
 		else if typeof name is 'function'
 			strName= name.name
-		# check not already set
-		throw new Error "Directive already set: #{strName}" if _owns _schemaDescriptor, strName
-		
+			throw new Error "Directive with same name already set: #{strName}" if strName of _schemaDescriptor
+			# map function
+			_fxDirectiveMapper[strName]= name
+
 		# dynamic descriptor
 		if typeof cb is 'function'
-			_defineProperty _schemaDescriptor, k, value: ->
+			# define
+			_defineProperty _schemaDescriptor, strName, value: ->
 				# descriptor
 				dsrp= @[DESCRIPTOR]
 				if dsrp
@@ -36,18 +43,25 @@ _defineProperties _schemaDescriptor,
 					dsrp[i] = v unless v is undefined
 				# chain
 				return desc
+			# map function
+
 		# static descritpor
-		else if Array.isArray cb
+		else if cb= cb[DESCRIPTOR]
 			_defineProperty _schemaDescriptor, strName, get: _defineDescriptorWrapper (desc)->
 				for v, i in cb
 					desc[i] = v unless v is undefined
 				return
 		# error
 		else
-			throw new Error 'Illegal directive descriptor'
+			throw new Error "Illegal directive descriptor for: #{strName}"
 		# chain
 		this
 	# create multiple directive at once
-	directives: value: (desc)->
+	directives: value: (directives)->
+		<%= assertArgTypes('directives', 'plain object') %>
+		for k,v of directives
+			@directive k, v
 		# chain
 		this
+
+

@@ -19,7 +19,7 @@ _defineDescriptor= (k, v)->
 ###
 _defineDescriptors= (descriptors)->
 	for k,v of descriptors
-		_defineDescriptors k, v
+		_defineDescriptor k, v
 	return
 # compiler
 _descriptorCompilers = [] # set of descriptor compilers
@@ -35,7 +35,7 @@ _descriptorCheck= (cb)->
 
 # finally check
 _descriptorFinally = [] # final adjustements
-_defineDescriptorFinally= (descriptor)->
+_defineDescriptorFinally= (cb)->
 	_descriptorFinally.push cb
 	return
 
@@ -46,7 +46,6 @@ _defaultDescriptor = ->
 	# return schema descriptor
 	obj = _create _schemaDescriptor,
 		[DESCRIPTOR]: value: desc
-	desc[<%= SCHEMA_DESCRIPTOR_K.parent %>]= obj
 	return obj
 _defineDescriptorWrapper= (fx)->
 	->
@@ -65,5 +64,3 @@ _defineDescriptorWrapper= (fx)->
 		#TODO add debug 
 		# Chain
 		return desc
-
-ds= cb.apply desc[1], Array.from(arguments)[1...]

@@ -33,30 +33,37 @@ _compileSchema = (schema, compiledSchema)->
 ###
 # 
 _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
-	# convert to descriptor
-	nestedObj = Model.value nestedObj unless _owns nestedObj, DESCRIPTOR
-	# create compiled schema
-	nestedDescriptor = nestedObj[DESCRIPTOR]
-	# check for convertion override
-	scType = compiledSchema[<%= SCHEMA.schemaType %>]
-	if typeof scType is 'number'
-		# is Object
-		if scType is 1
-			throw new Error "compileNested>> Illegal object override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Object
-		# is Array
-		else if scType is 2
-			throw new Error "compileNested>> Illegal array override at: #{path.join '.'}" unless nestedDescriptor.type is _ModelTypes.Array
-		# uncknown
+	try
+		# convert to descriptor
+		nestedObj = Model.value nestedObj unless _owns nestedObj, DESCRIPTOR
+		# create compiled schema
+		nestedDescriptor = nestedObj[DESCRIPTOR]
+		# check for convertion override
+		scType = compiledSchema[<%= SCHEMA.schemaType %>]
+		if typeof scType is 'number'
+			# is Object
+			if scType is <%= SCHEMA.OBJECT %>
+				throw "Illegal object override" unless nestedDescriptor[<%= SCHEMA_DESC.check %>] is _CHECK_IS_OBJECT
+			# is Array
+			else if scType is <%= SCHEMA.LIST %>
+				throw new Error "Illegal array override" unless nestedDescriptor[<%= SCHEMA_DESC.check %>] is _CHECK_IS_LIST
+			# uncknown
+			else
+				throw new Error "Unknown type: #{scType}"
+		
+		# apply nested compile
+		if nestedDescriptor[<%= SCHEMA_DESC.check %>] is _CHECK_IS_OBJECT
+			_compileNestedObject nestedDescriptor, compiledSchema, path, seekQueue, errors
+		else if nestedDescriptor[<%= SCHEMA_DESC.check %>] is _CHECK_IS_LIST
+			_compileNestedArray nestedDescriptor, compiledSchema, path, seekQueue, errors
 		else
-			throw new Error "compileNested>> Unknown type: #{scType}"
-	
-	# apply nested compile
-	if nestedDescriptor.type is _ModelTypes.Object
-		_compileNestedObject nestedDescriptor, compiledSchema, path, seekQueue, errors
-	else if nestedDescriptor.type is _ModelTypes.Array
-		_compileNestedArray nestedDescriptor, compiledSchema, path, seekQueue, errors
-	else
-		throw new Error "Schema could be Object or Array only!"
+			throw "Schema could be Object or Array only!"
+	catch err
+		errors.push
+			path: path
+			at: 'compileNested'
+			error: err
+	return
 ###*
  * Compile nested object
 ###
@@ -65,7 +72,7 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 	proto = compiledSchema[<%= SCHEMA.proto %>] ?= _create _plainObjPrototype
 	# go through object attributes
 	attrPos = Math.max <%= SCHEMA.sub %>, compiledSchema.length
-	for attrN, attrV of nestedDescriptor[<% SCHEMA_DESC.nestedObject %>]
+	for attrN, attrV of nestedDescriptor[<%= SCHEMA_DESC.nestedObject %>]
 		try
 			# check if attribute already exists (case of override)
 			attrIndex = 0
@@ -103,20 +110,21 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			if nxtSchema and not compiledSchema[attrIndex + <%= SCHEMA.attrRef %>] # not a reference
 				# nested object
 				if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.OBJECT %>
-					throw new Error 'Nested obj required' unless attrV[<% SCHEMA_DESC.nestedObject %>]
-					seekQueue.push attrV[<% SCHEMA_DESC.nestedObject %>], nxtSchema, path.concat attrN
+					throw new Error 'Nested obj required' unless attrV[<%= SCHEMA_DESC.nestedObject %>]
+					seekQueue.push attrV[<%= SCHEMA_DESC.nestedObject %>], nxtSchema, path.concat attrN
 				# nested array
 				else if nxtSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
 					arrSchem = nxtSchema[<%= SCHEMA.listSchema %>]
 					if arrSchem
-						throw new Error 'Nested obj required' unless attrV[<% SCHEMA_DESC.nestedList %>]
-						seekQueue.push attrV[<% SCHEMA_DESC.nestedList %>], arrSchem, path.concat attrN, '*'
+						throw new Error 'Nested obj required' unless attrV[<%= SCHEMA_DESC.nestedList %>]
+						seekQueue.push attrV[<%= SCHEMA_DESC.nestedList %>], arrSchem, path.concat attrN, '*'
 				# unknown
 				else
 					throw new Error "Unknown schema type: #{nxtSchema[<%= SCHEMA.schemaType %>]}"
 		catch err
 			errors.push
 				path: path.concat attrN
+				at: 'compile nested object'
 				error: err
 	# final adjustements
 	for comp in _descriptorFinally
@@ -125,18 +133,19 @@ _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors
 		catch e
 			errors.push
 				path: path
+				at: 'Final adjustements'
 				error: err
 	return
 ###*
  * Compile nested array
 ###
 _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
-	throw new 'Inexpected array schema' unless nestedDescriptor[<% SCHEMA_DESC.nestedList %>]
+	throw new 'Inexpected array schema' unless nestedDescriptor[<%= SCHEMA_DESC.nestedList %>]
 	compiledSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.LIST %> # uncompiled Array
-	compiledSchema[<%= SCHEMA.proto %>] ?= nestedDescriptor[<% SCHEMA_DESC.listProto %>]
+	compiledSchema[<%= SCHEMA.proto %>] ?= nestedDescriptor[<%= SCHEMA_DESC.listProto %>]
 	
 	# item type
-	arrItem = nestedDescriptor[<% SCHEMA_DESC.nestedList %>]
+	arrItem = nestedDescriptor[<%= SCHEMA_DESC.nestedList %>]
 	if arrItem
 		arrItem= arrItem[DESCRIPTOR]
 		# tp= compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
@@ -153,6 +162,6 @@ _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors
 			else
 				arrSchem ?= [] #new Array <%= SCHEMA.sub %>
 			# add to queue
-			seekQueue.push arrItem[<% SCHEMA_DESC.nestedList %>] || arrItem[<% SCHEMA_DESC.nestedObject %>], arrSchem, path.concat '*'
+			seekQueue.push arrItem[<%= SCHEMA_DESC.nestedList %>] || arrItem[<%= SCHEMA_DESC.nestedObject %>], arrSchem, path.concat '*'
 		compiledSchema[<%= SCHEMA.listSchema %>]= arrSchem
 	return

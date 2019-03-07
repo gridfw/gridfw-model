@@ -2,6 +2,23 @@
  * Model
 ###
 
+<%
+#=include template-defines.js
+#=include schema.template.js
+%>
+#=include consts.coffee
+#=include utils.coffee
+
+###* Create Model route ###
+_schemaDescriptor = _create null
+
+# create basic Model
+Model = _create _schemaDescriptor,
+	all: value: _create: null # Store all shared models
+	newChild: value: ->
+		mdle = _create this,
+			all: value: _create null # store all Model factories
+		return mdle
 
 # coredigix xss
 #TODO
@@ -12,34 +29,6 @@ xssClean = (data)->
 xssEscape = (data)->
 	Model.warn 'Coredigix xss cleaner is missing'
 	data
-	
-
-<%
-#=include template-defines.js
-#=include schema.template.js
-%>
-#=include consts.coffee
-#=include utils.coffee
-
-###* Create Model route ###
-_schemaDescriptor = _create null
-Model = _create _schemaDescriptor,
-	all: _create: null # Store all shared models
-	
-# create private models
-_createModelRoot = ->
-	mdl = _create Model,
-		all: value: _create null
-	# return
-	mdl
-
-# create new private Models. This will enable to get private model schemas instead of shared ones
-_defineProperty Model, 'createPrivate',
-	value: _createModelRoot
-
-
-Model = do _createModelRoot # basic Model
-
 
 # basic error log
 Model.logError = console.error.bind console
@@ -52,9 +41,6 @@ Model.debug = console.debug.bind console
 
 # schema
 #=include schema/index.coffee
-
-# Types
-#=include types/index.coffee
 
 # schema inspector for debuging
 _modelDescriptorToString = value: -> "Model.#{@[DESCRIPTOR]._pipe.join '.'}"

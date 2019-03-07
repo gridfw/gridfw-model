@@ -57,29 +57,29 @@ var schemaAttrDescrptr =[
 ];
 
 var SCHEMA_DESCRIPTOR_K= [
-	'check'
-	'convert'
-	'required'
-	'extensible'
+	'check',
+	'convert',
+	'required',
+	'extensible',
 	// JSON
-	'jsonIgnore'
-	'toJSON'
+	'jsonIgnore',
+	'toJSON',
 	// Database
-	'virtual'
-	'toDB'
+	'virtual',
+	'toDB',
 	// Getter/Setter, define prototype property
-	'define'
+	'define',
 	// assert
-	'asserts' // asserts queue
-	'assertPredefined'// predefined asserts
-	'assertions'
+	'asserts', // asserts queue
+	'assertPredefined',// predefined asserts
+	'assertions',
 	// pipe
-	'pipe'
+	'pipe',
 	// reference
-	'ref'
+	'ref',
 	// nested
-	'nestedObject'
-	'nestedList'
+	'nestedObject',
+	'nestedList',
 	'listProto' // list prototype
 
 ];
@@ -89,27 +89,27 @@ var SCHEMA_DESCRIPTOR_K= [
 var SCHEMA = Object.create(null);
 for(var len = nestedObjSchema.length, i= 0; i< len; ++i){
 	k = nestedObjSchema[i];
-	SCHEMA[k] = i
+	SCHEMA[k] = i;
 }
 for(var len = nestedListSchema.length, i= 0; i< len; ++i){
 	k = nestedListSchema[i];
-	SCHEMA[k] = i
+	SCHEMA[k] = i;
 }
 for(var len = schemaAttrDescrptr.length, i= 0; i< len; ++i){
 	k = schemaAttrDescrptr[i];
-	SCHEMA[k] = i
+	SCHEMA[k] = i;
 }
 
 
 // index where attributes starts
-SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length)
-SCHEMA.attrPropertyCount = schemaAttrDescrptr.length // attribute properties count
-SCHEMA.OBJECT = 1
-SCHEMA.LIST = 2
+SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length);
+SCHEMA.attrPropertyCount = schemaAttrDescrptr.length; // attribute properties count
+SCHEMA.OBJECT = 1;
+SCHEMA.LIST = 2;
 
 // schema descriptor
-var SCHEMA_DESCRIPTOR= Object.create(null);
+var SCHEMA_DESC= Object.create(null);
 for(var len = SCHEMA_DESCRIPTOR_K.length, i= 0; i< len; ++i){
 	k = SCHEMA_DESCRIPTOR_K[i];
-	SCHEMA_DESC[k] = i
+	SCHEMA_DESC[k] = i;
 }
