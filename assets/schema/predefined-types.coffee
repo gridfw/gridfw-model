@@ -30,6 +30,16 @@ _checkIsNumber= (value) -> throw new Error "Expected positive integer" unless Nu
 ###
 _CHECK_IS_OBJECT= (data)-> typeof data is 'object' and not Array.isArray data
 _CHECK_IS_LIST= (data)-> Array.isArray data
+_CHECH_IS_METHOD= (data)-> throw 'IS_METHOD'
+_TYPE_METHOD= '<Method>'
+# return type based on check function
+_checkToType= (check)->
+	if check is _CHECK_IS_OBJECT
+		return <%= SCHEMA.OBJECT %>
+	else if check is _CHECK_IS_LIST
+		return <%= SCHEMA.LIST %>
+	else
+		throw new Error 'Illegal check function'
 
 # basic directives
 _OBJECT_DIRECTIVE= Model.type 'Object'

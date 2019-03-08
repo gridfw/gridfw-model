@@ -22,15 +22,20 @@ _defineDescriptors= (descriptors)->
 		_defineDescriptor k, v
 	return
 # compiler
+_descriptorCurrentCompilers = [] # set of descriptor compilers
+_defineCurrentSchemaCompiler= (index, cb)->
+	_descriptorCurrentCompilers.push index, cb
+	return
+# compiler
 _descriptorCompilers = [] # set of descriptor compilers
-_defineCompiler= (index, cb)->
+_defineParentSchemaCompiler= (index, cb)->
 	_descriptorCompilers.push index, cb
 	return
 
 # descriptor check
-_descriptorchechers = [] # set of descriptor compilers
+_descriptorChecks = [] # set of descriptor compilers
 _descriptorCheck= (cb)->
-	_descriptorchechers.push cb
+	_descriptorChecks.push cb
 	return
 
 # finally check

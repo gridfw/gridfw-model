@@ -1,54 +1,89 @@
 try
 	# ...
-	console.log 'Begin tests-----'
+	console.log 'Test schema ========================>'
+	userSchema= Model.value
+		_id: Model.ObjectId
+		id: Model.alias '_id'
+		firstName: Model.required.jsonIgnoreStringify.String
+		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
+
+		age: Model.Number.default(15)
+
+		jobs:[
+			title: String
+			period:
+				from: Model.Date.required
+				to: Date
+		]
+
+		skills: [String]
+
+		networking:
+			Model.required
+			.list [Number]
+			.listMethods
+				test1: ->
+				test2: (a,b,c)->
+
+		method1: ->
+	console.log '>> user schema descriptor: ', userSchema
+
+	# compile schema
+	User = Model.from
+		name: 'user'
+		schema: userSchema
+
+	console.log '>> user schema: ', User[Model.SCHEMA]
+	console.log '>> user signature:\n', User.modelSignature()
+
 
 	# console.log '-----', Object.getOwnPropertyDescriptors Model.__proto__
 
-	User = Model.from
-		name: 'user'
-		# schema: Model.extensible.value
-		schema:
-			firstName: Model.required.jsonIgnoreStringify.String
-			lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
-			company: String
-			age: Model.Number.default(5).min(3).max(28).assert(->)
-			user: Model.ref 'user'
-			phones: [Number]
-			phones2: [
-				Model.Number.max(50) # not working!
-			]
-			phones3: Model.required.list Number
+	# User = Model.from
+	# 	name: 'user'
+	# 	# schema: Model.extensible.value
+	# 	schema:
+	# 		firstName: Model.required.jsonIgnoreStringify.String
+	# 		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
+	# 		company: String
+	# 		age: Model.Number.default(5).min(3).max(28).assert(->)
+	# 		user: Model.ref 'user'
+	# 		phones: [Number]
+	# 		phones2: [
+	# 			Model.Number.max(50) # not working!
+	# 		]
+	# 		phones3: Model.required.list Number
 
-			# phones: [
-			# 	test:String
-			# 	list: [Number]
-			# ]
-			# emails: Model.list ({
-			# 	type: String
-			# 	value: String
-			# 	})
-	# print user
-	console.log "------- user signature: \n", User.modelSignature()
+	# 		# phones: [
+	# 		# 	test:String
+	# 		# 	list: [Number]
+	# 		# ]
+	# 		# emails: Model.list ({
+	# 		# 	type: String
+	# 		# 	value: String
+	# 		# 	})
+	# # print user
+	# console.log "------- user signature: \n", User.modelSignature()
 			
-			# test: Model.freeze.value
-			# 	kk:
-			# 		cc: Date
-			# lastName: Model.String
-			# email: Model.Email
-			# fullName: Model.getter -> "#{@firstName} #{@lastName}"
-			# class: Model.Int.required.jsonIgnore
-			# website: Model.String.required
-			# toString: -> "User [@fullName]"
-			# hobies:[
-			# 	title: String
-			# 	score:
-			# 		max: Number
-			# 		avg: Model.Unsigned.required
-			# 		doBa: ->
-			# 			console.log 'baba'
-			# 		def: Model.Hex.default -> 'a45f'
-			# 	validated: Boolean
-			# ]
+	# 		# test: Model.freeze.value
+	# 		# 	kk:
+	# 		# 		cc: Date
+	# 		# lastName: Model.String
+	# 		# email: Model.Email
+	# 		# fullName: Model.getter -> "#{@firstName} #{@lastName}"
+	# 		# class: Model.Int.required.jsonIgnore
+	# 		# website: Model.String.required
+	# 		# toString: -> "User [@fullName]"
+	# 		# hobies:[
+	# 		# 	title: String
+	# 		# 	score:
+	# 		# 		max: Number
+	# 		# 		avg: Model.Unsigned.required
+	# 		# 		doBa: ->
+	# 		# 			console.log 'baba'
+	# 		# 		def: Model.Hex.default -> 'a45f'
+	# 		# 	validated: Boolean
+	# 		# ]
 
 	# Model.override
 	# 	name: 'user'

@@ -82,9 +82,8 @@ var SCHEMA_DESCRIPTOR_K= [
 	'pipe',
 	// reference
 	'ref',
-	// nested
-	'nestedObject',
-	'nestedList',
+	// nested 15
+	'nested',
 	'listProto' // list prototype
 
 ];

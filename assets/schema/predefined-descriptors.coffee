@@ -15,15 +15,18 @@ _defineDescriptors
 		descriptor[<%= SCHEMA_DESC.convert %>] = fx
 		return
 # type
-_defineCompiler <%= SCHEMA_DESC.type %>, (descriptorV, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.type %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrType %>] = descriptorV
 	return
 # check
-_defineCompiler <%= SCHEMA_DESC.check %>, (descriptorV, attr, schema, proto, attrPos)->
+_defineCurrentSchemaCompiler <%= SCHEMA_DESC.check %>, (check, descriptor, schema)->
+	schema[<%= SCHEMA.schemaType %>]= _checkToType check
+	return
+_defineParentSchemaCompiler <%= SCHEMA_DESC.check %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrCheck %>] = descriptorV
 	return
 # convert
-_defineCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrConvert %>] = descriptorV
 	return
 
@@ -67,7 +70,7 @@ _defineDescriptorFinally (schema)->
 		value: toJSONFx
 	return
 # JSON ignore
-_defineCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrJSONIgnore %>]= jsonIgnore # debug purpose
 	ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
 	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>] ?= []
@@ -82,7 +85,7 @@ _defineCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto,
 		ignoreParse.push attr
 	return
 # ToJSON
-_defineCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
 	(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON
 	return
 
@@ -99,7 +102,7 @@ _defineDescriptors
 		descriptor[<%= SCHEMA_DESC.toDB %>] = fx
 		return
 # Virtual
-_defineCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrVirtual %>]= isVirtual # debug purpose
 	virtualAttrs = schema[<%= SCHEMA.virtual %>] ?= []
 	# remove attr from virtual list
@@ -108,7 +111,7 @@ _defineCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, att
 	virtualAttrs.push attr if isVirtual
 	return
 # ToDB
-_defineCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
 	(schema[<%= SCHEMA.toDB %>] ?= []).push attr, toDBFx
 	return
 # final adjustement
@@ -136,7 +139,7 @@ _defineDescriptorFinally (schema)->
 _defineDescriptors
 	required: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = on
 	optional: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = off
-_defineCompiler <%= SCHEMA_DESC.required %>, (isRequired, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.required %>, (isRequired, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrRequired %>]= isRequired # debug purpose
 	requiredAttrs = schema[<%= SCHEMA.required %>] ?= []
 	# remove attr
@@ -153,10 +156,13 @@ _defineDescriptors
 	extensible: (descriptor)-> descriptor[<%= SCHEMA_DESC.extensible %>] = on
 _descriptorCheck (descriptor)->
 	if typeof descriptor[<%= SCHEMA_DESC.extensible %>] is 'boolean'
-		unless typeof descriptor[<%= SCHEMA_DESC.nestedObject %>] is 'undefined'
+		unless typeof descriptor[<%= SCHEMA_DESC.nested %>] is 'undefined'
 			throw 'Extensible/freeze are to be used with nested object only'
 	return
-_defineCompiler <%= SCHEMA_DESC.extensible %>, (isExtensible, attr, schema, proto, attrPos)->
+_defineCurrentSchemaCompiler <%= SCHEMA_DESC.extensible %>, (isExtensible, descriptor, schema)->
+	schema[<%= SCHEMA.extensible %>]= isExtensible
+	return
+_defineParentSchemaCompiler <%= SCHEMA_DESC.extensible %>, (isExtensible, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrExtensible %>]= isExtensible # debug purpose
 	return
 
@@ -196,6 +202,7 @@ _defineDescriptors
 		throw new Error "function expected" unless typeof fx is 'function'
 		throw new Error "Getter expects no argument" unless fx.length is 0
 		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descriptor[<%= SCHEMA_DESC.type %>]= "<GETTER / SETTER>"
 		descr.get= fx
 		return
 	# generate value once and set it to this object
@@ -203,6 +210,7 @@ _defineDescriptors
 		throw new Error "function expected" unless typeof fx is 'function'
 		throw new Error "Getter expects no argument" unless fx.length is 0
 		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descriptor[<%= SCHEMA_DESC.type %>]= "<GETTER ONCE>"
 		descr.get= ->
 			vl = fx.call this
 			_defineProperty this, attr,
@@ -217,6 +225,7 @@ _defineDescriptors
 		throw new Error "function expected" unless typeof fx is 'function'
 		throw new Error "Setter expects signature: function(value){}" unless fx.length is 1
 		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descriptor[<%= SCHEMA_DESC.type %>]= "<GETTER / SETTER>"
 		descr.set= fx
 		return
 	###*
@@ -228,6 +237,7 @@ _defineDescriptors
 	alias: (descriptor, value)->
 		throw new Error "Alias expects property name as argument" unless typeof value is 'string'
 		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
+		descriptor[<%= SCHEMA_DESC.type %>]= "<ALIAS: #{value}>"
 		descr.get= -> @[value]
 		descr.set= (data)->
 			@[value] = data
@@ -241,8 +251,8 @@ _descriptorCheck (descriptor)->
 		throw 'Could not use a getter/setter when a default value or prototype property is set.'
 	return
 # compile
-_defineCompiler <%= SCHEMA_DESC.define %>, (descrp, attr, schema, proto, attrPos)->
-	_defineProperty proto, attr, descrp
+_defineParentSchemaCompiler <%= SCHEMA_DESC.define %>, (def, attr, schema, proto, attrPos)->
+	_defineProperty proto, attr, def
 	return
 
 ###*
@@ -290,12 +300,12 @@ _defineDescriptors
 			assertions[k]= v
 		return
 # asserts
-_defineCompiler <%= SCHEMA_DESC.asserts %>, (asserts, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.asserts %>, (asserts, attr, schema, proto, attrPos)->
 	assertArr = schema[attrPos + <%= SCHEMA.attrAsserts %>] ?= []
 	assertArr.push el for el in asserts
 	return
 # predefined asserts
-_defineCompiler <%= SCHEMA_DESC.assertPredefined %>, (asserts, attr, schema, proto, attrPos, descriptor)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.assertPredefined %>, (asserts, attr, schema, proto, attrPos, descriptor)->
 	assertions= descriptor[<%= SCHEMA_DESC.assertions %>]
 	throw new Error 'Assertions missed: did you forget to set the type?' unless assertions
 	# go through assertions
@@ -318,7 +328,7 @@ _defineDescriptors
 		throw "Expected function" unless typeof fx is 'function'
 		(descriptor[<%= SCHEMA_DESC.pipe %>] ?= []).push fx
 		return
-_defineCompiler <%= SCHEMA_DESC.pipe %>, (pipeLine, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.pipe %>, (pipeLine, attr, schema, proto, attrPos)->
 	pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
 	pipeArr.push el for el in pipeLine
 	return
@@ -333,23 +343,24 @@ _defineDescriptors
 		descriptor[<%= SCHEMA_DESC.ref %>] = ref
 		return
 _descriptorCheck (descriptor)->
-	if descriptor[<%= SCHEMA_DESC.ref %>] and (descriptor[<%= SCHEMA_DESC.nestedList %>] or descriptor[<%= SCHEMA_DESC.nestedObject %>])
+	if descriptor[<%= SCHEMA_DESC.ref %>] and descriptor[<%= SCHEMA_DESC.nested %>]
 		throw new Error 'Could not use reference, nested object and nested list at the same time'
 	return
 
-_defineCompiler <%= SCHEMA_DESC.ref %>, (ref, attr, schema, proto, attrPos)->
+_defineParentSchemaCompiler <%= SCHEMA_DESC.ref %>, (ref, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrRef %>]= ref
 	return
 
-###*
- * Value
- * @example
- * .value(Number) equivalent to: Number
- * .value(sub-schema) equivalent to: sub-schema
- * .value(Model.Int) equivalent to: Model.Int
- * .value(function(){}) equivalent to: function(){}
-###
+### List & object ###
 _defineDescriptors
+	###*
+	 * Value
+	 * @example
+	 * .value(Number) equivalent to: Number
+	 * .value(sub-schema) equivalent to: sub-schema
+	 * .value(Model.Int) equivalent to: Model.Int
+	 * .value(function(){}) equivalent to: function(){}
+	###
 	value: (descriptor, arg)->
 		# is function
 		if typeof arg is 'function'
@@ -362,6 +373,8 @@ _defineDescriptors
 			# else add this function as prototype property
 			else
 				descriptor[<%= SCHEMA_DESC.define %>]= value: arg
+				descriptor[<%= SCHEMA_DESC.type %>]= _TYPE_METHOD
+				descriptor[<%= SCHEMA_DESC.check %>]= _CHECH_IS_METHOD
 				return
 		# if it is an array of objects
 		else if Array.isArray arg
@@ -371,11 +384,11 @@ _defineDescriptors
 				when 0
 					arg= Model.list Model.Mixed
 				else
-					throw new Error "One type is expected for Array, #{attrV.length} are given."
+					throw new Error "One type is expected for Array, #{arg.length} are given."
 		# nested object
 		else if typeof arg is 'object'
 			unless arg[DESCRIPTOR]
-				descriptor[<%= SCHEMA_DESC.nestedObject %>]= arg
+				descriptor[<%= SCHEMA_DESC.nested %>]= arg
 				arg= Model.Object
 		# error
 		else
@@ -385,42 +398,18 @@ _defineDescriptors
 		for v,i in arg[DESCRIPTOR]
 			descriptor[i]=v unless typeof v is 'undefined'
 		return
-_defineCompiler <%= SCHEMA_DESC.nestedObject %>, (nestedObj, attr, schema, proto, attrPos, descriptor)->
-	# check for a schema
-	objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
-	if objSchema
-		throw new Error "Illegal convertion to object" if objSchema[<%= SCHEMA.schemaType %>] isnt <%= SCHEMA.OBJECT %>
-		# extensibility
-		if typeof descriptor[<%= SCHEMA_DESC.extensible %>] is 'boolean'
-			objSchema[<%= SCHEMA.extensible %>]= descriptor[<%= SCHEMA_DESC.extensible %>]
-	else
-		objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
-		objSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.OBJECT %>
-		# extensibility
-		if typeof descriptor[<%= SCHEMA_DESC.extensible %>] is 'boolean'
-			objSchema[<%= SCHEMA.extensible %>]= descriptor[<%= SCHEMA_DESC.extensible %>]
-		else
-			objSchema[<%= SCHEMA.extensible %>]= schema[<%= SCHEMA.extensible %>] # inheritance
-	return
-# check descriptor
-_descriptorCheck (descriptor)->
-	if descriptor[<%= SCHEMA_DESC.nestedObject %>] and descriptor[<%= SCHEMA_DESC.check %>] isnt _CHECK_IS_OBJECT
-		throw new Error 'Illegal type for the nested object'
-	return
-
-###*
- * List
- * @example
- * .list(Number)
- * .list({sub-schema})
- * .list(Model.Int)
- * .list(Model.list(...))
- * .list(Number, {prototype methods})
- * .list Number
- * 		sort: function(cb){}
- * 		length: Model.getter(...).setter(...)
-###
-_defineDescriptors
+	###*
+	 * List
+	 * @example
+	 * .list(Number)
+	 * .list({sub-schema})
+	 * .list(Model.Int)
+	 * .list(Model.list(...))
+	 * .list(Number, {prototype methods})
+	 * .list Number
+	 * 		sort: function(cb){}
+	 * 		length: Model.getter(...).setter(...)
+	###
 	list: (descriptor, arg)->
 		# proto
 		descriptor[<%= SCHEMA_DESC.listProto %>] ?= _create null
@@ -428,7 +417,7 @@ _defineDescriptors
 		for v, i in _ARRAY_DIRECTIVE_DESCRIPTOR
 			descriptor[i]= v unless v is undefined
 		# nested value
-		descriptor[<%= SCHEMA_DESC.nestedList %>]= Model.value arg
+		descriptor[<%= SCHEMA_DESC.nested %>]= Model.value arg
 		return
 	listMethods: (descriptor, methods)->
 		proto= descriptor[<%= SCHEMA_DESC.listProto %>] ?= _create null
@@ -448,41 +437,36 @@ _defineDescriptors
 			else
 				throw new Error 'Only "functions" or an object {get, set} are accepted as list prototype arguments'
 		return
-# list
-_defineCompiler <%= SCHEMA_DESC.nestedList %>, (arrItem, attr, schema, proto, attrPos, descriptor)->
-	# create object schema
-	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
-	if objSchema
-		throw new Error "Illegal convertion to Array" unless objSchema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
-	else
+_defineParentSchemaCompiler <%= SCHEMA_DESC.nested %>, (nestedObj, attr, schema, proto, attrPos, descriptor)->
+	# type
+	schType= _checkToType schema[attrPos + <%= SCHEMA.attrCheck %>]
+	# check for a schema
+	objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
+	# override schema or change it if not the same type (object or list)
+	unless objSchema and objSchema[<%= SCHEMA.schemaType %>] is schType
 		objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
-		objSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.LIST %>
-		objSchema[<%= SCHEMA.proto %>] = _create _arrayProto
-	# content
-	arrItem = arrItem[DESCRIPTOR]
-	objSchema[<%= SCHEMA.listType %>] = arrItem[<%= SCHEMA_DESC.type %>]
-	objSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
-	objSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
-	# nested object or array if set
-	arrSchem = objSchema[<%= SCHEMA.listSchema %>]
-	if arrItem[<%= SCHEMA_DESC.check %>] in [_CHECK_IS_OBJECT, _CHECK_IS_LIST]
-		if arrItem[<%= SCHEMA_DESC.ref %>]
-			objSchema[<%= SCHEMA.listRef %>]= arrItem[<%= SCHEMA_DESC.ref %>]
-			arrSchem= undefined
-		else
-			arrSchem ?= [] #new Array <%= SCHEMA.sub %>
-	objSchema[<%= SCHEMA.listSchema %>]= arrSchem
+		objSchema[<%= SCHEMA.schemaType %>] = schType
+		# inherit extensibility
+		objSchema[<%= SCHEMA.extensible %>]= schema[<%= SCHEMA.extensible %>] # inheritance
+		# prototype
+		objSchema[<%= SCHEMA.proto %>] ?= _create if schType is <%= SCHEMA.LIST %> then _arrayProto else _plainObjPrototype
 	return
-# list proto
-_defineCompiler <%= SCHEMA_DESC.listProto %>, (listProto, attr, schema, proto, attrPos, descriptor)->
-	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
-	_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors listProto
+
+_defineCurrentSchemaCompiler <%= SCHEMA_DESC.nested %>, (nestedObj, descriptor, schema)->
+	schType= schema[<%= SCHEMA.schemaType %>]
+	# prototype
+	schema[<%= SCHEMA.proto %>] ?= _create if schType is <%= SCHEMA.LIST %> then _arrayProto else _plainObjPrototype
 	return
 
 # check descriptor
 _descriptorCheck (descriptor)->
-	if descriptor[<%= SCHEMA_DESC.nestedList %>] and descriptor[<%= SCHEMA_DESC.check %>] isnt _CHECK_IS_LIST
-		throw new Error 'Illegal type for the nested list'
+	if descriptor[<%= SCHEMA_DESC.nested %>] and descriptor[<%= SCHEMA_DESC.check %>] not in [_CHECK_IS_OBJECT, _CHECK_IS_LIST]
+		throw new Error 'Illegal type for the nested object or list'
+	return
+# list proto
+_defineParentSchemaCompiler <%= SCHEMA_DESC.listProto %>, (listProto, attr, schema, proto, attrPos, descriptor)->
+	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
+	_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors listProto
 	return
 
 
