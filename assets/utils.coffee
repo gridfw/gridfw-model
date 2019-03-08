@@ -1,6 +1,6 @@
 
 # Object shortcuts
-_create = Object.create
+# _create = Object.create
 _setPrototypeOf= Object.setPrototypeOf
 _getPrototypeOf= Object.getPrototypeOf
 _defineProperties= Object.defineProperties

@@ -40,7 +40,6 @@ var nestedListSchema = [
 	'listConvert',	// fx: list item type convertion
 	'listSchema',	// list items schema
 	'listRef',		// reference
-	'listSnapshot'	// snapshot
 ];
 // attribute descriptors
 var schemaAttrDescrptr =[
@@ -53,10 +52,16 @@ var schemaAttrDescrptr =[
 	'attrPipe',		// list of pipe functions
 	'attrSchema',	// sub-schema
 	'attrRef',		// reference
-	'attrSnapshot'	// snapshot
+
+	// debug purpose attributes
+	'attrJSONIgnore',
+	'attrVirtual',
+	'attrRequired',
+	'attrExtensible'
 ];
 
 var SCHEMA_DESCRIPTOR_K= [
+	'type',
 	'check',
 	'convert',
 	'required',

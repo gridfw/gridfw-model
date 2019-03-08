@@ -6,3 +6,7 @@
 #=include predefined-directive-wrappers.coffee
 #=include predefined-types.coffee
 #=include compiles-schema.coffee
+
+
+# utilities
+#=include schema-print-tree.coffee

@@ -1,14 +1,7 @@
 ###*
  * Model
 ###
-
-<%
-#=include template-defines.js
-#=include schema.template.js
-%>
-#=include consts.coffee
-#=include utils.coffee
-
+_create = Object.create
 ###* Create Model route ###
 _schemaDescriptor = _create null
 
@@ -20,9 +13,27 @@ Model = _create _schemaDescriptor,
 			all: value: _create null # store all Model factories
 		return mdle
 
+<%
+#=include template-defines.js
+#=include schema.template.js
+%>
+#=include consts.coffee
+#=include utils.coffee
+
 # coredigix xss
 #TODO
-xssClean = (data)->
+xssCleanNoImages = (data)->
+	# if xssClean?
+	# 	xssCleanNoImages= (data) -> xssClean data, imgs: off
+	# 	return xssCleanNoImages(data)
+	# else
+	Model.warn 'Coredigix xss cleaner is missing'
+	data
+xssCleanWithImages = (data)->
+	# if xssClean?
+	# 	xssCleanNoImages= (data) -> xssClean data, imgs: on
+	# 	return xssCleanNoImages(data)
+	# else
 	Model.warn 'Coredigix xss cleaner is missing'
 	data
 

@@ -35,11 +35,11 @@ _compileSchema = (schema, compiledSchema)->
 _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
 	try
 		# convert to descriptor
-		nestedObj = Model.value nestedObj unless _owns nestedObj, DESCRIPTOR
+		nestedObj= Model.value nestedObj unless nestedObj[DESCRIPTOR]
 		# create compiled schema
-		nestedDescriptor = nestedObj[DESCRIPTOR]
+		nestedDescriptor= nestedObj[DESCRIPTOR]
 		# check for convertion override
-		scType = compiledSchema[<%= SCHEMA.schemaType %>]
+		scType= compiledSchema[<%= SCHEMA.schemaType %>]
 		if typeof scType is 'number'
 			# is Object
 			if scType is <%= SCHEMA.OBJECT %>
@@ -68,7 +68,7 @@ _compileNested = (nestedObj, compiledSchema, path, seekQueue, errors)->
  * Compile nested object
 ###
 _compileNestedObject= (nestedDescriptor, compiledSchema, path, seekQueue, errors)->
-	compiledSchema[<%= SCHEMA.schemaType %>] = 1 # uncompiled object
+	compiledSchema[<%= SCHEMA.schemaType %>] = <%= SCHEMA.OBJECT %> # uncompiled object
 	proto = compiledSchema[<%= SCHEMA.proto %>] ?= _create _plainObjPrototype
 	# go through object attributes
 	attrPos = Math.max <%= SCHEMA.sub %>, compiledSchema.length
@@ -151,6 +151,7 @@ _compileNestedArray = (nestedDescriptor, compiledSchema, path, seekQueue, errors
 		# tp= compiledSchema[<%= SCHEMA.listType %>] = arrItem.type
 		# compiledSchema[<%= SCHEMA.listCheck %>] = tp.check
 		# compiledSchema[<%= SCHEMA.listConvert %>] = tp.convert
+		compiledSchema[<%= SCHEMA.listType %>] = arrItem[<%= SCHEMA_DESC.type %>]
 		compiledSchema[<%= SCHEMA.listCheck %>] = arrItem[<%= SCHEMA_DESC.check %>]
 		compiledSchema[<%= SCHEMA.listConvert %>] = arrItem[<%= SCHEMA_DESC.convert %>]
 		# nested object or array

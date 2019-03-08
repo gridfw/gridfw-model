@@ -12,16 +12,16 @@ _defineProperty Model, 'get', value: (modelName)-> @all[modelName]
  * @optional @param {boolean} options.getters - create getters (.getAttr -> .attr) @default false
 ###
 _defineProperty Model, 'from', value: (options)->
-	throw new Error "Illegal arguments" unless arguments.length is 1 and typeof options is 'object' and options
+	<%= assertArgTypes('Model.from', 'plain object') %>
 
 	# check the name of the model
-	throw new Error "Model name is required" unless 'name' of options
 	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
 	throw new Error "Model alreay set: #{modelName}" if modelName of @all
 
 	# check and compile schema
-	throw new Error "Invalid options.schema" unless typeof options.schema is 'object' and options.schema
+	schema= options.schema
+	throw new Error "Invalid options.schema" unless typeof schema is 'object' and schema
 	compiledSchema = []
 	# extensibility
 	compiledSchema[<%= SCHEMA.extensible %>] = if options.schema[DESCRIPTOR]?.extensible then on else off

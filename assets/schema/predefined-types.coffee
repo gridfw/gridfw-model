@@ -31,16 +31,13 @@ _checkIsNumber= (value) -> throw new Error "Expected positive integer" unless Nu
 _CHECK_IS_OBJECT= (data)-> typeof data is 'object' and not Array.isArray data
 _CHECK_IS_LIST= (data)-> Array.isArray data
 
-Model
-###
-# Basic types
-###
-.directive Object,
-	Model.check _CHECK_IS_OBJECT
+# basic directives
+_OBJECT_DIRECTIVE= Model.type 'Object'
+	.check _CHECK_IS_OBJECT
 	.convert -> throw 'Invalid Object'
-.directive Array,
-	# accept to have the element directly when array contains just one element
-	Model.check _CHECK_IS_LIST
+_ARRAY_DIRECTIVE= # accept to have the element directly when array contains just one element
+	Model.type 'List'
+	.check _CHECK_IS_LIST
 	.convert (data)-> if data? then [data] else []
 	.assertions
 		min:
@@ -52,13 +49,22 @@ Model
 		length:
 			param: _checkIsNumber
 			assert: (data, len) -> throw "Array length [#{data.length}] expected #{len}" if data.length isnt len
-.directive 'Mixed',
-	Model.check -> true
+_ARRAY_DIRECTIVE_DESCRIPTOR= _ARRAY_DIRECTIVE[DESCRIPTOR]
+
+### CREATE DIRECTIVES ###
+Model
+###
+# Basic types
+###
+.directive Object, _OBJECT_DIRECTIVE
+.directive Array, _ARRAY_DIRECTIVE
+.directive 'Mixed', Model.type('Mixed').check -> true
 ###
 # Boolean
 ###
 .directive Boolean,
-	Model.check (data) -> typeof data is 'boolean'
+	Model.type 'Boolean'
+	.check (data) -> typeof data is 'boolean'
 	.convert (data) ->
 		throw 'Expected boolean, got Object' if typeof data is 'object' and data
 		!!data
@@ -66,7 +72,8 @@ Model
 # Number
 ###
 .directive Number,
-	Model.check (data) -> typeof data is 'number'
+	Model.type 'Number'
+	.check (data) -> typeof data is 'number'
 	.convert (data) ->
 		value = +data
 		throw "Invalid number: #{data}" if isNaN value
@@ -81,6 +88,7 @@ Model
 .directives
 	Int:
 		Model.Number
+		.type 'Int'
 		.check (data) -> Number.isSafeInteger data
 		.convert (data) ->
 			value = +data
@@ -88,13 +96,16 @@ Model
 			value
 	Unsigned:
 		Model.Number
+		.type 'Unsigned'
 		.check (data) -> Number.isSafeInteger data and data >= 0
 		.convert (data) ->
 			value = +data
 			throw "Invalid positive integer #{data}" unless Number.isSafeInteger value and data >= 0
 			value
 	Hex:
-		Model.check (data) -> typeof data is 'string' and HEX_CHECK.test data
+		Model
+		.type 'Hex'
+		.check (data) -> typeof data is 'string' and HEX_CHECK.test data
 		.convert (data) ->
 			throw "Invalid Hex: #{data}" unless typeof data is 'number'
 			data.toString 16
@@ -109,7 +120,9 @@ Model
 # Date
 ###
 .directive Date,
-	Model.check (data) -> data instanceof Date
+	Model
+	.type 'Date'
+	.check (data) -> data instanceof Date
 	.convert (data) ->
 		v= new Date data
 		throw "Invalid date: #{data}" if v.toString() is 'Invalid Date'
@@ -166,7 +179,9 @@ Model
 # Text, String
 ###
 .directive 'Text',
-	Model.check (data) -> typeof data is 'string'
+	Model
+	.type 'Text'
+	.check (data) -> typeof data is 'string'
 	.convert (data) ->
 		throw 'Expected String, got Object.' if typeof data is 'object'
 		data.toString()
@@ -186,24 +201,34 @@ Model
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
 			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
 .directive String, # String, HTML escaped
-	Model.Text.pipe (data) -> xssEscape data
+	Model.Text
+	.type 'String'
+	.pipe xssEscape
 .directives
 	# HTML: remove keep only safe HTML, remove images
 	HTML:
-		Model.Text.assert max: HTML_MAX_LENGTH
-		.pipe (data)-> xssClean data, imgs: off
+		Model.Text
+		.type 'HTML'
+		.assert max: HTML_MAX_LENGTH
+		.pipe xssCleanNoImages
 	# HTMLImgs: remove keep only safe HTML and images
 	HTMLImgs:
-		Model.Text.assert max: HTML_MAX_LENGTH
-		.pipe (data)-> xssClean data, imgs: on
+		Model.Text
+		.type 'HTMLImgs'
+		.assert max: HTML_MAX_LENGTH
+		.pipe xssCleanWithImages
 	# Email
 	Email:
-		Model.Text.check (data) -> typeof data is 'string' and EMAIL_CHECK.test data
+		Model.Text
+		.type 'Email'
+		.check (data) -> typeof data is 'string' and EMAIL_CHECK.test data
 		.convert (data) -> throw "Invalid Email: #{data}"
 		.assert max: STRING_MAX
 	# Password
 	Password:
-		Model.Text.convert (data) -> throw "Invalid Password: #{data}"
+		Model.Text
+		.type 'Password'
+		.convert (data) -> throw "Invalid Password: #{data}"
 		.assert
 			min: PASSWD_MIN
 			max: PASSWD_MAX
@@ -211,7 +236,9 @@ Model
 # URL
 ###
 .directive URL,
-	Model.check (data) -> data instanceof URL
+	Model
+	.type 'URL'
+	.check (data) -> data instanceof URL
 	.convert (data) ->
 		throw "Illegal URL: #{data}" unless typeof data is 'string'
 		new URL data
@@ -238,13 +265,17 @@ Model
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
 			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
 .directive 'Image',
-	Model.URL.assert max: DATA_URL_MEX_LENGTH
+	Model.URL
+	.type 'Image'
+	.assert max: DATA_URL_MEX_LENGTH
 ###
 # UUID
 ###
 .directives
 	ObjectId:
-		Model.check (data) -> typeof data is 'object' and data._bsontype is 'ObjectID'
+		Model
+		.type 'ObjectId'
+		.check (data) -> typeof data is 'object' and data._bsontype is 'ObjectID'
 		.convert (data) -> ObjectId.createFromHexString data
 	# UUID: ->
 	# 	Model.check

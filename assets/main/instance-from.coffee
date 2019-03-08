@@ -116,7 +116,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 					<% if(isFullCheck){ %>
 					try
 						# do check if from JSON
-						attrType= schema[i+<%= SCHEMA.attrType %>]
+						# attrType= schema[i+<%= SCHEMA.attrType %>]
 						attrCheck= schema[i+<%= SCHEMA.attrCheck %>]
 						attrConvert= schema[i+<%= SCHEMA.attrConvert %>]
 						# check / convert
@@ -165,7 +165,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				throw 'Expected array' unless Array.isArray obj
 				# prepare fxes
 				<% if(isFullCheck){ %>
-				attrType= schema[<%= SCHEMA.listType %>]
+				# attrType= schema[<%= SCHEMA.listType %>]
 				attrCheck= schema[<%= SCHEMA.listCheck %>]
 				attrConvert= schema[<%= SCHEMA.listConvert %>]
 				<% } %>
