@@ -10,6 +10,7 @@ _compileSchema = (schemaArch, schema)->
 
 	seekQueue = [schema, schemaArch, []] # shema, schemaArch, path
 	seekQueueIndex = 0
+	`r: //`
 	while seekQueueIndex < seekQueue.length
 		# load from queue
 		schema= seekQueue[seekQueueIndex++]
@@ -40,31 +41,46 @@ _compileSchema = (schemaArch, schema)->
 			schemaType= schema[<%= SCHEMA.schemaType %>]
 			if schemaType is <%= SCHEMA.OBJECT %>
 				for attrN, attrV of nested
-					# check for attribute already exists and set it if not
-					attrI= <%= SCHEMA.sub %>
-					found= no
-					while attrI < previousPos
-						if schema[attrI] is attrN
-							found= yes
-							break
-						attrI+= <%= SCHEMA.attrPropertyCount %>
-					unless found
-						attrI= lastAttrPos
-						lastAttrPos += <%= SCHEMA.attrPropertyCount %>
-						schema[lastAttrPos-1] = null # allocate all needed space
-					# compile attributes
-					#=include compile-schema-attr.coffee
+					try
+						# check for attribute already exists and set it if not
+						attrI= <%= SCHEMA.sub %>
+						found= no
+						while attrI < previousPos
+							if schema[attrI] is attrN
+								found= yes
+								break
+							attrI+= <%= SCHEMA.attrPropertyCount %>
+						unless found
+							attrI= lastAttrPos
+							lastAttrPos += <%= SCHEMA.attrPropertyCount %>
+							schema[lastAttrPos-1] = null # allocate all needed space
+						# compile attributes
+						#=include compile-schema-attr.coffee
+					catch err
+						errors.push
+							path: path.concat attrN
+							at: 'Compile Object Attrs'
+							error: err
+						`break r;`
+					
 			else if schemaType is <%= SCHEMA.LIST %>
-				attrI= previousPos
-				attrV= nested
-				attrN= '*'
-				#=include compile-schema-attr.coffee
+				try
+					attrI= <%= SCHEMA.sub %>
+					attrV= nested
+					attrN= '*'
+					#=include compile-schema-attr.coffee
+				catch e
+					errors.push
+						path: path.concat attrN
+						at: 'Compile List'
+						error: err
+					`break r;`
 			else
 				throw new Error "Illegal schema type: #{schemaType}"
 		catch err
 			errors.push
 				path: path
-				at: 'compile schema'
+				at: 'Compile schema'
 				error: err
 	# return errors
 	return errors

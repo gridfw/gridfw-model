@@ -14,6 +14,22 @@ _defineDescriptors
 		throw "Expected function" unless typeof fx is 'function'
 		descriptor[<%= SCHEMA_DESC.convert %>] = fx
 		return
+	clear: (descriptor)-> # clear previous info. Override data
+		# clear descriptor
+		for v,i in descriptor
+			descriptor[i]= undefined
+		# override schema
+		descriptor[<%= SCHEMA_DESC.clear %>]= yes
+		return
+# clear (keep in top!)
+_defineParentSchemaCompiler <%= SCHEMA_DESC.clear %>, (descriptorV, attr, schema, proto, attrPos)->
+	# remove this attribute except it's name
+	i= attrPos + 1
+	ends= attrPos + <%= SCHEMA.attrPropertyCount %>
+	while i< ends
+		schema[i]= undefined
+		++i
+	return
 # type
 _defineParentSchemaCompiler <%= SCHEMA_DESC.type %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrType %>] = descriptorV
@@ -22,8 +38,12 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.type %>, (descriptorV, attr, schema,
 _defineCurrentSchemaCompiler <%= SCHEMA_DESC.check %>, (check, descriptor, schema)->
 	schema[<%= SCHEMA.schemaType %>]= _checkToType check
 	return
-_defineParentSchemaCompiler <%= SCHEMA_DESC.check %>, (descriptorV, attr, schema, proto, attrPos)->
-	schema[attrPos + <%= SCHEMA.attrCheck %>] = descriptorV
+_defineParentSchemaCompiler <%= SCHEMA_DESC.check %>, (check, attr, schema, proto, attrPos)->
+	# override check and nested
+	previousCheck= schema[attrPos + <%= SCHEMA.attrCheck %>]
+	if previousCheck and not _checkTypeCompatible previousCheck, check
+		throw 'Illegal type override. Use Model.clear to cancel all previous descriptors for this attribute'
+	schema[attrPos + <%= SCHEMA.attrCheck %>] = check
 	return
 # convert
 _defineParentSchemaCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
@@ -328,9 +348,18 @@ _defineDescriptors
 		throw "Expected function" unless typeof fx is 'function'
 		(descriptor[<%= SCHEMA_DESC.pipe %>] ?= []).push fx
 		return
+	pipeOnce:(descriptor, fx)->
+		throw "Expected function" unless typeof fx is 'function'
+		(descriptor[<%= SCHEMA_DESC.pipeOnce %>] ?= []).push fx
+		return
 _defineParentSchemaCompiler <%= SCHEMA_DESC.pipe %>, (pipeLine, attr, schema, proto, attrPos)->
 	pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
 	pipeArr.push el for el in pipeLine
+	return
+_defineParentSchemaCompiler <%= SCHEMA_DESC.pipeOnce %>, (pipeLine, attr, schema, proto, attrPos)->
+	pipeArr = schema[attrPos + <%= SCHEMA.attrPipe %>] ?= []
+	for el in pipeLine
+		pipeArr.push el unless el in pipeArr
 	return
 
 ###*
@@ -443,7 +472,11 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.nested %>, (nestedObj, attr, schema,
 	# check for a schema
 	objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
 	# override schema or change it if not the same type (object or list)
-	unless objSchema and objSchema[<%= SCHEMA.schemaType %>] is schType
+	if objSchema
+		unless objSchema[<%= SCHEMA.schemaType %>] is schType
+			throw 'Illegal Object/list override. Use Model.clear to cancel all previous descriptors first.'
+	# new
+	else
 		objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>] = [] # new Array <%= SCHEMA.sub %>
 		objSchema[<%= SCHEMA.schemaType %>] = schType
 		# inherit extensibility

@@ -32,6 +32,7 @@ _CHECK_IS_OBJECT= (data)-> typeof data is 'object' and not Array.isArray data
 _CHECK_IS_LIST= (data)-> Array.isArray data
 _CHECH_IS_METHOD= (data)-> throw 'IS_METHOD'
 _TYPE_METHOD= '<Method>'
+_TYPES_ =[_CHECK_IS_OBJECT, _CHECK_IS_LIST, _CHECH_IS_METHOD]
 # return type based on check function
 _checkToType= (check)->
 	if check is _CHECK_IS_OBJECT
@@ -40,6 +41,14 @@ _checkToType= (check)->
 		return <%= SCHEMA.LIST %>
 	else
 		throw new Error 'Illegal check function'
+
+###*
+ * Check if two types are compatible and could be overrided
+###
+_checkTypeCompatible= (check1, check2)->
+	return yes if check1 is check2
+	return no if check1 in _TYPES_ or check2 in _TYPES_
+	return yes
 
 # basic directives
 _OBJECT_DIRECTIVE= Model.type 'Object'
@@ -213,20 +222,20 @@ Model
 .directive String, # String, HTML escaped
 	Model.Text
 	.type 'String'
-	.pipe xssEscape
+	.pipeOnce xssEscape
 .directives
 	# HTML: remove keep only safe HTML, remove images
 	HTML:
 		Model.Text
 		.type 'HTML'
 		.assert max: HTML_MAX_LENGTH
-		.pipe xssCleanNoImages
+		.pipeOnce xssCleanNoImages
 	# HTMLImgs: remove keep only safe HTML and images
 	HTMLImgs:
 		Model.Text
 		.type 'HTMLImgs'
 		.assert max: HTML_MAX_LENGTH
-		.pipe xssCleanWithImages
+		.pipeOnce xssCleanWithImages
 	# Email
 	Email:
 		Model.Text

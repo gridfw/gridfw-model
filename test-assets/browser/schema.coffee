@@ -11,6 +11,7 @@ try
 
 		jobs:[
 			title: String
+			subTitle: String
 			period:
 				from: Model.Date.required
 				to: Date
@@ -36,6 +37,31 @@ try
 	console.log '>> user schema: ', User[Model.SCHEMA]
 	console.log '>> user signature:\n', User.modelSignature()
 
+	# override schema
+	Model.override
+		name: 'user'
+		schema:
+			jobs:[
+				title: Number
+				period:
+					to: Model.required
+					title: Model.String.max(500).min(0)
+			]
+			addedAttr: Model.String.required
+			firstName: Model.optional
+			# skills: [
+			# 	skillTitle: String
+			# 	skillLevel: Number
+			# 	]
+			networking:[[String]]
+	# override 2
+	Model.override
+		name: 'user'
+		schema:
+			skills: Model.clear.value
+				skillCC: String
+				skill2: Boolean
+	console.log '>> Overrided user signature:\n', User.modelSignature()
 
 	# console.log '-----', Object.getOwnPropertyDescriptors Model.__proto__
 

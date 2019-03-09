@@ -43,7 +43,7 @@ var nestedListSchema = [
 ];
 // attribute descriptors
 var schemaAttrDescrptr =[
-	'attrName',		// name of the attribute
+	'attrName',		// name of the attribute (keep in top!)
 	'attrType',		// type of the attribute
 	'attrCheck',	// check attribute type
 	'attrConvert',	// convert attribute type
@@ -64,6 +64,7 @@ var SCHEMA_DESCRIPTOR_K= [
 	'type',
 	'check',
 	'convert',
+	'clear', // clear previous configuration
 	'required',
 	'extensible',
 	// JSON
@@ -80,6 +81,7 @@ var SCHEMA_DESCRIPTOR_K= [
 	'assertions',
 	// pipe
 	'pipe',
+	'pipeOnce',
 	// reference
 	'ref',
 	// nested 15
