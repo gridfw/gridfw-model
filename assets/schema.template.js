@@ -5,7 +5,6 @@ This template will help to simulate object format to symplify code
 	- schemaType: 1
 	- proto: {}
 	- ignoreJSON: [...]
-	- ignoreParse: [...]
 	- required: [...]
 	- virtual: [...]
 	- extensible: true
@@ -25,8 +24,6 @@ var nestedObjSchema = [
 	'proto',		// schema prototype
 	'extensible',	// if the object could contains attributes other then specified ones
 	'ignoreJSON',	// list of attributes to be ignored when serializing as JSON
-	'ignoreParse',	// list of attributes to be ignored when parsing an object from JSON or any untrasted data source
-	'required',		// list of required attributes
 	'virtual',		// virtual attributes
 
 	'toJSON',		// [attr, toJSONFx.call(parentObj, data, attr), ...] convert attributes
@@ -47,16 +44,19 @@ var schemaAttrDescrptr =[
 	'attrType',		// type of the attribute
 	'attrCheck',	// check attribute type
 	'attrConvert',	// convert attribute type
+	'attrNull', // do this attribute can be null or undefined. Remove it otherwise when null or undefined.
 	'attrAsserts',	// list of assertion functions
 	'attrPropertyAsserts',	// predefined asserts: ['assertName', assertValue, assertFx, ...] exple: ['min', 4, minFx, 'max', 521, maxFx]
 	'attrPipe',		// list of pipe functions
 	'attrSchema',	// sub-schema
 	'attrRef',		// reference
 
+	'attrRequired',
+	'attrIgnoreJSONParsing',
+
 	// debug purpose attributes
 	'attrJSONIgnore',
 	'attrVirtual',
-	'attrRequired',
 	'attrExtensible'
 ];
 
@@ -65,6 +65,7 @@ var SCHEMA_DESCRIPTOR_K= [
 	'check',
 	'convert',
 	'clear', // clear previous configuration
+	'null',
 	'required',
 	'extensible',
 	// JSON

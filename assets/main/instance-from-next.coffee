@@ -1,13 +1,10 @@
 
-<%
-var schemaIdx = isList ? SCHEMA.listSchema : 'i + '+ SCHEMA.attrSchema;
-var schemaRef = isList ? SCHEMA.listRef : 'i + '+ SCHEMA.attrRef;
-%>
+
 if typeof attrObj is 'object' and attrObj
-	nxSchema = schema[<%= schemaIdx %>]
+	nxSchema = schema[i + <%= SCHEMA.attrSchema %>]
 	unless nxSchema
 		# reference
-		if nxRef = schema[<%= schemaRef %>]
+		if nxRef = schema[i + <%= SCHEMA.attrRef %>]
 			nxMd = model.all[nxRef]
 			throw "Reference resolve fails: #{nxRef}" unless nxMd
 			nxSchema= nxMd[SCHEMA]
@@ -15,5 +12,5 @@ if typeof attrObj is 'object' and attrObj
 		else
 			throw new Error 'No reference set!'
 		# future fast access
-		schema[<%= schemaIdx %>]= nxSchema
+		schema[i + <%= SCHEMA.attrSchema %>]= nxSchema
 	seekQueu.push attrObj, nxSchema, (path.concat attrName)

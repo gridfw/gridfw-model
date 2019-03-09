@@ -30,3 +30,4 @@ _defineProperties Model,
 #=include basic-proto.coffee
 #=include from-schema.coffee
 #=include instance-from.coffee
+#=include utilities.coffee

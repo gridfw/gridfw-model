@@ -62,7 +62,6 @@ _compileSchema = (schemaArch, schema)->
 							at: 'Compile Object Attrs'
 							error: err
 						`break r;`
-					
 			else if schemaType is <%= SCHEMA.LIST %>
 				try
 					attrI= <%= SCHEMA.sub %>
@@ -77,6 +76,15 @@ _compileSchema = (schemaArch, schema)->
 					`break r;`
 			else
 				throw new Error "Illegal schema type: #{schemaType}"
+			# final adjustements
+			for comp in _descriptorFinally
+				try
+					comp schema
+				catch e
+					errors.push
+						path: path
+						at: 'Final adjustements'
+						error: err
 		catch err
 			errors.push
 				path: path

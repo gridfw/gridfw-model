@@ -53,18 +53,17 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			path= seekQueu[++seekQueuIndex]
 			++seekQueuIndex
 			schemaType = schema[<%= SCHEMA.schemaType %>]
-			# convert Object
-			
+
 			### Object operations ###
 			if schemaType is <%= SCHEMA.OBJECT %>
 				<% var isList= false; %>
 				throw new Error 'Expected plain object' if Array.isArray obj
 				_setPrototypeOf obj, null
-				<% if(isFullCheck && !isValidateOnly){ %>
-				# Remove ignored attributes from JSON
-				if attrs = schema[<%= SCHEMA.ignoreParse %>]
-					for v in attrs
-						delete obj[v]
+
+				# full check
+				<% if(isFullCheck){ %>
+
+				<% if(!isValidateOnly){ %>
 				# remove other attributes if not extensible
 				unless schema[<%= SCHEMA.extensible %>]
 					# get list of all attributes
@@ -83,109 +82,100 @@ for(var i=0, len = fxes.length; i<len; ++i){
 								path: path.concat k
 								warn: 'Extra attribute'
 				<% } %>
-
-				# check for required attributes
-				<% if(isFullCheck){ %>
-				if attrs = schema[<%= SCHEMA.required %>]
-					for v in attrs
-						unless obj[v]?
-							result.errors.push
-								required: true
-								attrName: v
-								path: path.concat v
-								error: 'required'
-				<% } %>
-				# 
-				# go through attributes
-				j = <%= SCHEMA.sub %>
+				# check attributes
+				i = <%= SCHEMA.sub %>
 				len = schema.length
-				while j < len
-					# next
-					i = j
-					j+= <%= SCHEMA.attrPropertyCount %>
-					# load attr info
-					attrName = schema[i]
-					# check for attribute
-					continue unless attrName of obj
-					attrObj = obj[attrName]
-					# continue if is null or undefined
-					if attrObj in [undefined, null]
-						# delete obj[attrName]
-						continue
-					# convert type
-					<% if(isFullCheck){ %>
+				while i < len
 					try
-						# do check if from JSON
-						# attrType= schema[i+<%= SCHEMA.attrType %>]
-						attrCheck= schema[i+<%= SCHEMA.attrCheck %>]
-						attrConvert= schema[i+<%= SCHEMA.attrConvert %>]
-						# check / convert
-						unless attrCheck attrObj
-							attrObj = obj[attrName] = attrConvert attrObj
-						# exec assertions: [assertionFx, optionalMessage, ...]
-						if asserts = schema[i+<%= SCHEMA.attrAsserts %>]
-							for assertFx in asserts
-								assertFx attrObj, obj, attrName
-						# Type level assertions
-						if (asserts = schema[i+<%= SCHEMA.attrPropertyAsserts %>])
-							assertsI= 0
-							assertsLen= asserts.length # [assertName, assertParam, assertFx]
-							while assertsI < assertsLen
-								asserts[assertsI+1] attrObj, asserts[assertsI+2], obj, attrName
-								assertsI += 3 # [assertName, assertParam, assertFx]
-						# apply pipes
-						<% if(!isValidateOnly){ %>
-						if pipes = schema[i+<%= SCHEMA.attrPipe %>]
-							for v in pipes
-								attrObj = v.call obj, attrObj, attrName
-						<% } %>
-						obj[attrName] = attrObj
-
-						# if is plain object, add to next subobject to check
-						# if typeof attrObj is 'object' and attrObj
-						# 	seekQueu.push attrObj, schema[i+<%= SCHEMA.attrSchema %>], (path.concat attrName)
-							
-						#=include instance-from-next.coffee
+						# load attr info
+						attrName = schema[i]
+						# check for attribute
+						if attrName of obj
+							# check if ignore when parsing
+							<% if(!isValidateOnly){ %>
+							if schema[i + <%= SCHEMA.attrIgnoreJSONParsing %>] is yes
+								delete obj[attrName]
+								continue
+							<% } %>
+							# check not null
+							attrObj= obj[attrName]
+							unless attrObj?
+								unless schema[i + <%= SCHEMA.attrNull %>] is yes
+									<%= isValidateOnly? '' : 'delete obj[attrName]' %>
+									if schema[i + <%= SCHEMA.attrRequired %>]
+										result.errors.push
+											null: true
+											required: true
+											attrName: attrName
+											path: path.concat attrName
+											error: 'Required attribute is ' + attrObj
+								continue
+						else
+							if schema[i + <%= SCHEMA.attrRequired %>]
+								result.errors.push
+									required: true
+									attrName: attrName
+									path: path.concat attrName
+									error: 'required'
+							continue
+						
+						# operations
+						#=include instance-from-full-check.coffee
 					catch err
-						<% if(!isValidateOnly){ %>
-						delete obj[attrName]
-						<% } %>
+						<%= isValidateOnly? '' : 'delete obj[attrName]' %>
 						result.errors.push
 							attrName: attrName
 							path: path.concat attrName
 							value: attrObj
 							error: err
-					<% } else { %>
-					# if is plain object, add to next subobject to check
-					#=include instance-from-next.coffee
-					<% } %>
+					finally
+						i+= <%= SCHEMA.attrPropertyCount %>
+				<% } %>
+
+				# check for nested elements
+				i = <%= SCHEMA.sub %>
+				len = schema.length
+				while i < len
+					try
+						# get info
+						attrName= schema[i]
+						attrObj= obj[attrName]
+						#=include instance-from-next.coffee
+					catch err
+						result.errors.push
+							attrName: attrName
+							path: path.concat attrName
+							value: attrObj
+							error: err
+					# next
+					i+= <%= SCHEMA.attrPropertyCount %>
+
+
 			### List operations ###
 			else if schemaType is <%= SCHEMA.LIST %>
-				<% isList= true; %>
 				throw 'Expected array' unless Array.isArray obj
-				# prepare fxes
+				
+				# full check
 				<% if(isFullCheck){ %>
 				# attrType= schema[<%= SCHEMA.listType %>]
-				attrCheck= schema[<%= SCHEMA.listCheck %>]
-				attrConvert= schema[<%= SCHEMA.listConvert %>]
-				<% } %>
-				# go through elements
+				attrCheck= schema[<%= SCHEMA.sub + SCHEMA.attrCheck %>]
+				attrConvert= schema[<%= SCHEMA.sub + SCHEMA.attrConvert %>]
+				i= <%= SCHEMA.sub %>
+				j= 0
+				attrName= 0
 				listLen = obj.length
-				i= 0
-				j=0
 				while i < listLen
-					attrObj= obj[i]
-					<% if(isFullCheck){ %>
 					try
-						# check the type
-						unless attrCheck attrObj
-							attrObj = attrConvert attrObj
-							obj.splice i, 1, attrObj # replace in the array
-
-						# if is plain object, add to next subobject to check
-						#=include instance-from-next.coffee
+						attrObj= obj[attrName]
+						# check not null
+						unless attrObj?
+							if schema[i + <%= SCHEMA.attrNull %>] is yes
+								obj.splice attrName, 1 # remove this value
+								continue
+						# full check value
+						#=include instance-from-full-check.coffee
 						# next
-						++i
+						++attrName
 					catch err
 						# save error
 						result.errors.push
@@ -195,18 +185,25 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 						# remove element in the list
 						<% if(!isValidateOnly){ %>
-						obj.splice i, 1
+						obj.splice attrName, 1
 						listLen = obj.length # recalc obj length
 						<% } %>
 					finally
 						++j
-					<% } else { %>
-					# if is plain object, add to next subobject to check
-					#=include instance-from-next.coffee
-					# next
-					++i
-					++j
-					<% } %>
+				<% } %>
+
+				# check for nested elements
+				i= <%= SCHEMA.sub %>
+				for attrObj, attrName in obj
+					try
+						#=include instance-from-next.coffee
+					catch err
+						attrName: attrName
+						path: path.concat attrName
+						value: attrObj
+						error: err
+					
+
 			### Unsupported schema type ###
 			else
 				throw new Error 'Illegal schema type'

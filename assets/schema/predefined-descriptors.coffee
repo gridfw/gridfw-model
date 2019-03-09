@@ -21,6 +21,13 @@ _defineDescriptors
 		# override schema
 		descriptor[<%= SCHEMA_DESC.clear %>]= yes
 		return
+	# accept or denie null value
+	null: (descriptor)->
+		descriptor[<%= SCHEMA_DESC.null %>]= yes
+		return
+	notNull: (descriptor)->
+		descriptor[<%= SCHEMA_DESC.null %>]= no
+		return
 # clear (keep in top!)
 _defineParentSchemaCompiler <%= SCHEMA_DESC.clear %>, (descriptorV, attr, schema, proto, attrPos)->
 	# remove this attribute except it's name
@@ -45,9 +52,13 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.check %>, (check, attr, schema, prot
 		throw 'Illegal type override. Use Model.clear to cancel all previous descriptors for this attribute'
 	schema[attrPos + <%= SCHEMA.attrCheck %>] = check
 	return
-# convert
+# Convert
 _defineParentSchemaCompiler <%= SCHEMA_DESC.convert %>, (descriptorV, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrConvert %>] = descriptorV
+	return
+# Null
+_defineParentSchemaCompiler <%= SCHEMA_DESC.null %>, (isNull, attr, schema, proto, attrPos)->
+	schema[attrPos + <%= SCHEMA.attrNull %>] = isNull
 	return
 
 ###*
@@ -92,17 +103,14 @@ _defineDescriptorFinally (schema)->
 # JSON ignore
 _defineParentSchemaCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrJSONIgnore %>]= jsonIgnore # debug purpose
-	ignoreParse = schema[<%= SCHEMA.ignoreParse %>] ?= []
 	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>] ?= []
 	# remove this attr from JSON flags
-	_arrRemoveItem ignoreParse, attr
 	_arrRemoveItem ignoreSerialize, attr
 	# do not serialize attribute
 	if jsonIgnore & 1
 		ignoreSerialize.push attr
 	# ignore when parsing
-	if jsonIgnore & 2
-		ignoreParse.push attr
+	schema[attrPos + <%= SCHEMA.attrIgnoreJSONParsing %>]= jsonIgnore & 2
 	return
 # ToJSON
 _defineParentSchemaCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
@@ -160,12 +168,7 @@ _defineDescriptors
 	required: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = on
 	optional: (descriptor)-> descriptor[<%= SCHEMA_DESC.required %>] = off
 _defineParentSchemaCompiler <%= SCHEMA_DESC.required %>, (isRequired, attr, schema, proto, attrPos)->
-	schema[attrPos+<%= SCHEMA.attrRequired %>]= isRequired # debug purpose
-	requiredAttrs = schema[<%= SCHEMA.required %>] ?= []
-	# remove attr
-	_arrRemoveItem requiredAttrs, attr
-	# add if required
-	requiredAttrs.push attr if isRequired
+	schema[attrPos+<%= SCHEMA.attrRequired %>]= isRequired
 	return
 ###*
  * Set an object as freezed or extensible
