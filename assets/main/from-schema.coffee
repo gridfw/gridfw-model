@@ -50,15 +50,11 @@ _defineProperty Model, 'from', value: (options)->
 		# convert instance
 		switch arguments.length
 			when 0
-				instance = _create modelProto
+				return _create modelProto
 			when 1
-				throw new Error "Illegal instance" unless typeof instance is 'object' and instance
-				# convert Object
-				_setPrototypeOf instance, modelProto
+				return _fastInstanceConvert.call model, instance
 			else
 				throw new Error "Illegal arguments"
-		# return instance
-		instance
 	# set proto
 	model.prototype = modelProto
 	# add schema
