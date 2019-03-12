@@ -62,6 +62,44 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.null %>, (isNull, attr, schema, prot
 	return
 
 ###*
+ * create toJSON and toDB
+###
+_toJSON_toDB_list_ignoreAll= -> []
+	# fx this[attr], attr, this
+_toJSON_toDB_create= (fxName, schema, isExtensible, ignoreFields, fieldMap)->
+	if schema[<%= SCHEMA.schemaType %>] is <%= SCHEMA.LIST %>
+		if ignoreFields and ignoreFields.length
+			toJSON= _toJSON_toDB_list_ignoreAll
+		else
+			fieldMapFx= fieldMap['*']
+			toJSON= -> this.map (v, i)=> fieldMapFx v, i, this
+	else # object
+		# check
+		if ignoreFields and fieldMap
+			for f in ignoreFields
+				if f of fieldMap
+					throw new Error "#{fxName}>> Could not ignore and map a field at the some time: #{f}"
+		# process
+		if isExtensible
+			# remove black listed attributes
+			toJSON= -> _ignoreFields this, ignoreFields, fieldMap
+		else
+			# check for white list
+			whiteList= []
+			len = schema.length
+			i = <%= SCHEMA.sub %>
+			while i < len
+				if schema[i+ <%= SCHEMA.attrTypeOf %>] is <%= attrTypeOf.field %>
+					k= schema[i]
+					whiteList.push k unless ignoreFields and k in ignoreFields
+				i+= <%= SCHEMA.attrPropertyCount %>
+			# check if all attributes are white listed
+			toJSON= -> _onlyFields this, whiteList, fieldMap
+	# return
+	toJSON
+
+
+###*
  * JSON ignore
 ###
 _defineDescriptors
@@ -85,20 +123,17 @@ _descriptorCheck (descriptor)->
 # final adjustement
 _defineDescriptorFinally (schema)->
 	proto = schema[<%= SCHEMA.proto %>]
-	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]
-	toJSONList = schema[<%= SCHEMA.toJSON %>]
-	isExtensible = schema[<%= SCHEMA.extensible %>]
-	# using white list
-	if isExtensible is off
-		toJSONFx = _toJSONCleaner (_getSchemaAttributes schema), ignoreSerialize, toJSONList
-	else if (ignoreSerialize and ignoreSerialize.length) or (toJSONList and toJSONList.length)
-		toJSONFx = _toJSONCleaner null, ignoreSerialize, toJSONList
+	ignoreSerialize = schema[<%= SCHEMA.ignoreJSON %>]	# list of attr to be ignored when serializing
+	toJsonMap = schema[<%= SCHEMA.toJSON %>]			# map attr to JSON
+	isExtensible = schema[<%= SCHEMA.extensible %>]		# is extensible
+
+	# create toJSON
+	if ignoreSerialize and ignoreSerialize.length or toJsonMap
+		_defineProperty proto, 'toJSON',
+			configurable: on
+			value: _toJSON_toDB_create 'toJSON', schema, isExtensible, ignoreSerialize, toJsonMap
 	else
-		toJSONFx = null
-	# apply
-	_defineProperty proto, 'toJSON',
-		configurable: on
-		value: toJSONFx
+		delete proto.toJSON
 	return
 # JSON ignore
 _defineParentSchemaCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, schema, proto, attrPos)->
@@ -114,7 +149,7 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, sc
 	return
 # ToJSON
 _defineParentSchemaCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
-	(schema[<%= SCHEMA.toJSON %>] ?= []).push attr, @toJSON
+	(schema[<%= SCHEMA.toJSON %>] ?= _create null)[attr]= toJSON
 	return
 
 ###*
@@ -140,25 +175,22 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema
 	return
 # ToDB
 _defineParentSchemaCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
-	(schema[<%= SCHEMA.toDB %>] ?= []).push attr, toDBFx
+	(schema[<%= SCHEMA.toDB %>] ?= _create null)[attr]= toDBFx
 	return
 # final adjustement
 _defineDescriptorFinally (schema)->
 	proto = schema[<%= SCHEMA.proto %>]
 	virtualAttrs = schema[<%= SCHEMA.virtual %>]
-	toDBList = schema[<%= SCHEMA.toDB %>]
+	toDBMap = schema[<%= SCHEMA.toDB %>]
 	isExtensible = schema[<%= SCHEMA.extensible %>]
-	# using white list
-	if isExtensible is off
-		toDBFx = _toJSONCleaner (_getSchemaAttributes schema), virtualAttrs, toDBList
-	else if (virtualAttrs and virtualAttrs.length) or (toDBList and toDBList.length)
-		toDBFx = _toJSONCleaner null, virtualAttrs, toDBList
+
+	# create toDB
+	if virtualAttrs and virtualAttrs.length or toDBMap
+		_defineProperty proto, 'toDB',
+			configurable: on
+			value: _toJSON_toDB_create 'toDB', schema, isExtensible, virtualAttrs, toDBMap
 	else
-		toDBFx = null
-	# apply
-	_defineProperty proto, 'toJSON',
-		configurable: on
-		value: toDBFx
+		delete proto.toDB
 	return
 
 ###*
@@ -276,6 +308,7 @@ _descriptorCheck (descriptor)->
 # compile
 _defineParentSchemaCompiler <%= SCHEMA_DESC.define %>, (def, attr, schema, proto, attrPos)->
 	_defineProperty proto, attr, def
+	schema[attrPos+<%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.define %>
 	return
 
 ###*
@@ -381,6 +414,7 @@ _descriptorCheck (descriptor)->
 
 _defineParentSchemaCompiler <%= SCHEMA_DESC.ref %>, (ref, attr, schema, proto, attrPos)->
 	schema[attrPos + <%= SCHEMA.attrRef %>]= ref
+	schema[attrPos + <%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.ref %>
 	return
 
 ### List & object ###
@@ -472,6 +506,7 @@ _defineDescriptors
 _defineParentSchemaCompiler <%= SCHEMA_DESC.nested %>, (nestedObj, attr, schema, proto, attrPos, descriptor)->
 	# type
 	schType= _checkToType schema[attrPos + <%= SCHEMA.attrCheck %>]
+	schema[attrPos+<%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.field %>
 	# check for a schema
 	objSchema = schema[attrPos + <%= SCHEMA.attrSchema %>]
 	# override schema or change it if not the same type (object or list)
@@ -504,46 +539,3 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.listProto %>, (listProto, attr, sche
 	objSchema= schema[attrPos + <%= SCHEMA.attrSchema %>]
 	_defineProperties objSchema[<%= SCHEMA.proto %>], Object.getOwnPropertyDescriptors listProto
 	return
-
-
-###*
- * JSON cleaner
- * @param  {Array<String>} whiteList  - attributes to include or null
- * @param  {Array<String>} ignoreAttr - attributes to exclude or null
- * @param  {Array<attrName, toJSONFx, ...>} toJSONList     - Attributes with special JSON traitement
- * @return {function}            - toJSON method
-###
-_toJSONCleaner = (whiteList, ignoreAttr, toJSONList)->
-	# process white list
-	if whiteList and ignoreAttr
-		whiteList = _arrDiff whiteList, ignoreAttr
-	# toJSON/toDB function
-	->
-		clone = _create null
-		# white list
-		if whiteList
-			for k,v of this
-				if (_owns this, k) and k in whiteList
-					clone[k] = v
-		# ignored list
-		else if ignoreAttr
-			for k,v of this
-				if (_owns this, k) and k not in ignoreAttr
-					clone[k] = v
-		# just clone
-		else
-			Object.assign clone, this
-		# attr with special fx
-		if toJSONList and toJSONList.length
-			len = toJSONList.length
-			i = 0
-			while i < len
-				# load attr and fx
-				attr = toJSONList[i]
-				fx = toJSONList[++i]
-				++i
-				# apply
-				if attr of clone
-					clone[attr] = fx.call this, clone[attr], attr
-		# return
-		clone

@@ -10,6 +10,8 @@ throw "Illegal use of Model" if attrV is Model
 
 # attr name
 schema[attrI] = attrN
+# default value of "typeof" is "field"
+schema[attrI+ <%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.field %>
 
 # get attribute descriptor
 attrDescriptor= attrV[DESCRIPTOR]

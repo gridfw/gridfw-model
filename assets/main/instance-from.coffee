@@ -157,7 +157,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				
 				# full check
 				<% if(isFullCheck){ %>
-				# attrType= schema[<%= SCHEMA.listType %>]
 				attrCheck= schema[<%= SCHEMA.sub + SCHEMA.attrCheck %>]
 				attrConvert= schema[<%= SCHEMA.sub + SCHEMA.attrConvert %>]
 				i= <%= SCHEMA.sub %>

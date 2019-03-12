@@ -5,7 +5,7 @@ try
 		_id: Model.ObjectId
 		id: Model.alias '_id'
 		firstName: Model.required.jsonIgnoreStringify.String
-		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
+		lastName: Model.virtual.required.jsonIgnoreStringify.String
 
 		age: Model.Number.default(15)
 
@@ -224,6 +224,18 @@ try
 	# err= UserModel2.fromJSON userA
 	# console.log '----err: ', err
 	# # console.log '----user JSON: ', 
+	console.log 'DB Test ========================>'
+	UserModel3= Model.from
+		name: 'user3'
+		schema:
+			name: Model.String
+			lastName: Model.String
+			docs: Model.list Model.String.toJSON -> 'cccc' #.jsonIgnore
+
+
+	user3= {name: 'khalid', lastName: 'rafik', age: 15, docs: ['u', 'k', 'iii']}
+	UserModel3.fromJSON user3
+	console.log 'user3: ', JSON.stringify user3
 
 catch err
 	console.error "uncaught error:", err

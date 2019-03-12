@@ -10,13 +10,6 @@ This template will help to simulate object format to symplify code
 	- extensible: true
 	- toJSON: [...]
 	- toDB: [...]
--- nested list
-	- schemaType: 2
-	- proto: {}
-	- listType: list item type
-	- listCheck: fx (check all attributes)
-	- listConvert: fx (convert illegal attributes)
-	- listSchema: schema # sub items schema
 */
 
 var nestedObjSchema = [
@@ -29,19 +22,11 @@ var nestedObjSchema = [
 	'toJSON',		// [attr, toJSONFx.call(parentObj, data, attr), ...] convert attributes
 	'toDB'			// [attr, toDBFx.call(parentObj, data, attr), ...] convert attributes
 ];
-var nestedListSchema = [
-	'schemaType',	// is nested list or nested object
-	'proto',		// schema prototype
-	'listType',		// list item type
-	'listCheck',	// fx: check list items basid on some type
-	'listConvert',	// fx: list item type convertion
-	'listSchema',	// list items schema
-	'listRef',		// reference
-];
 // attribute descriptors
 var schemaAttrDescrptr =[
 	'attrName',		// name of the attribute (keep in top!)
 	'attrType',		// type of the attribute
+	'attrTypeOf',	// is this attribute a simple field, a function, a getter/setter, default value, ...
 	'attrCheck',	// check attribute type
 	'attrConvert',	// convert attribute type
 	'attrNull', // do this attribute can be null or undefined. Remove it otherwise when null or undefined.
@@ -98,10 +83,6 @@ for(var len = nestedObjSchema.length, i= 0; i< len; ++i){
 	k = nestedObjSchema[i];
 	SCHEMA[k] = i;
 }
-for(var len = nestedListSchema.length, i= 0; i< len; ++i){
-	k = nestedListSchema[i];
-	SCHEMA[k] = i;
-}
 for(var len = schemaAttrDescrptr.length, i= 0; i< len; ++i){
 	k = schemaAttrDescrptr[i];
 	SCHEMA[k] = i;
@@ -109,10 +90,18 @@ for(var len = schemaAttrDescrptr.length, i= 0; i< len; ++i){
 
 
 // index where attributes starts
-SCHEMA.sub = Math.max(nestedObjSchema.length, nestedListSchema.length);
+SCHEMA.sub = nestedObjSchema.length;
 SCHEMA.attrPropertyCount = schemaAttrDescrptr.length; // attribute properties count
 SCHEMA.OBJECT = 1;
 SCHEMA.LIST = 2;
+
+
+// attr typeof
+const attrTypeOf={
+	field: 0,
+	ref: 1,
+	define: 2 // function, getter, setter
+};
 
 // schema descriptor
 var SCHEMA_DESC= Object.create(null);

@@ -80,7 +80,7 @@ _compileSchema = (schemaArch, schema)->
 			for comp in _descriptorFinally
 				try
 					comp schema
-				catch e
+				catch err
 					errors.push
 						path: path
 						at: 'Final adjustements'

@@ -20,7 +20,7 @@ if (asserts = schema[i + <%= SCHEMA.attrPropertyAsserts %>])
 	assertsI= 0
 	assertsLen= asserts.length # [assertName, assertParam, assertFx]
 	while assertsI < assertsLen
-		asserts[assertsI+1] attrObj, asserts[assertsI+2], obj, attrName
+		asserts[assertsI+2] attrObj, asserts[assertsI+1], obj, attrName
 		assertsI += 3 # [assertName, assertParam, assertFx]
 
 # apply pipes

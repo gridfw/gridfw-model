@@ -1,6 +1,6 @@
 
 
-if typeof attrObj is 'object' and attrObj
+if typeof attrObj is 'object' and attrObj and not (SCHEMA of attrObj) # prevent circles
 	nxSchema = schema[i + <%= SCHEMA.attrSchema %>]
 	unless nxSchema
 		# reference
