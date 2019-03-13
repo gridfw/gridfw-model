@@ -203,11 +203,15 @@ _defineDescriptorFinally (schema)->
 
 	# create toDB
 	if virtualAttrs and virtualAttrs.length or toDBMap
-		_defineProperty proto, 'toDB',
-			configurable: on
+		toDB= 
 			value: _toJSON_toDB_create 'toDB', schema, isExtensible, virtualAttrs, toDBMap
+			configurable: on
+		_defineProperties proto,
+			toDB: toDB
+			toBSON: toDB
 	else
 		delete proto.toDB
+		delete proto.toBSON
 	return
 
 ###*
