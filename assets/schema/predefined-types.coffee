@@ -22,7 +22,8 @@
 ###*
  * Check is number
 ###
-_checkIsNumber= (value) -> throw new Error "Expected positive integer" unless Number.isSafeInteger(value) and value >= 0
+_checkIsNumber= (value) ->
+	throw new Error "Expected positive integer" unless Number.isSafeInteger(value) and value >= 0
 
 
 ###*

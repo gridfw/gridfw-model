@@ -112,6 +112,10 @@ _defineDescriptors
 		throw new Error "Expected function" unless typeof fx is 'function'
 		descriptor[<%= SCHEMA_DESC.toJSON %>] = fx
 		return
+	fromJSON: (descriptor, fx)->
+		throw new Error "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.fromJSON %>] = fx
+		return
 # check descriptor
 _descriptorCheck (descriptor)->
 	# when required
@@ -151,6 +155,10 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.jsonIgnore %>, (jsonIgnore, attr, sc
 _defineParentSchemaCompiler <%= SCHEMA_DESC.toJSON %>, (toJSON, attr, schema, proto, attrPos)->
 	(schema[<%= SCHEMA.toJSON %>] ?= _create null)[attr]= toJSON
 	return
+# fromJSON
+_defineParentSchemaCompiler <%= SCHEMA_DESC.fromJSON %>, (fromJSON, attr, schema, proto, attrPos)->
+	(schema[<%= SCHEMA.fromJSON %>] ?= _create null)[attr]= fromJSON
+	return
 
 ###*
  * Virtual methods
@@ -164,6 +172,11 @@ _defineDescriptors
 		throw new Error "Expected function" unless typeof fx is 'function'
 		descriptor[<%= SCHEMA_DESC.toDB %>] = fx
 		return
+	# change DB representation
+	fromDB: (descriptor, fx)->
+		throw new Error "Expected function" unless typeof fx is 'function'
+		descriptor[<%= SCHEMA_DESC.fromDB %>] = fx
+		return
 # Virtual
 _defineParentSchemaCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema, proto, attrPos)->
 	schema[attrPos+<%= SCHEMA.attrVirtual %>]= isVirtual # debug purpose
@@ -176,6 +189,10 @@ _defineParentSchemaCompiler <%= SCHEMA_DESC.virtual %>, (isVirtual, attr, schema
 # ToDB
 _defineParentSchemaCompiler <%= SCHEMA_DESC.toDB %>, (toDBFx, attr, schema, proto, attrPos)->
 	(schema[<%= SCHEMA.toDB %>] ?= _create null)[attr]= toDBFx
+	return
+# fromDB
+_defineParentSchemaCompiler <%= SCHEMA_DESC.fromDB %>, (fromDB, attr, schema, proto, attrPos)->
+	(schema[<%= SCHEMA.fromDB %>] ?= _create null)[attr]= fromDB
 	return
 # final adjustement
 _defineDescriptorFinally (schema)->
@@ -461,8 +478,7 @@ _defineDescriptors
 			throw new Error "Illegal attribute descriptor"
 
 		# override attributes
-		for v,i in arg[DESCRIPTOR]
-			descriptor[i]=v unless typeof v is 'undefined'
+		_overridDescriptor descriptor, arg[DESCRIPTOR]
 		return
 	###*
 	 * List

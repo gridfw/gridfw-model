@@ -29,6 +29,3 @@ if pipes = schema[i + <%= SCHEMA.attrPipe %>]
 	for v in pipes
 		attrObj = v.call obj, attrObj, attrName
 <% } %>
-
-# save modifitations
-obj[attrName] = attrObj

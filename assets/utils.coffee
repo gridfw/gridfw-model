@@ -20,6 +20,28 @@ _clone = (obj)->
 			Object.assign {}, obj
 	else
 		obj
+###*
+ * Deep clone
+ * @private
+ * @warn to use with cautions
+ * @warn uses recursivity
+###
+_deepClone= (obj)->
+	if typeof obj is 'object' and obj
+		if Array.isArray obj
+			clone= []
+			for v in obj
+				clone.push _deepClone v
+		else
+			clone= _create null
+			for k of obj
+				v= _getOwnPropertyDescriptor obj, k
+				if 'value' of v
+					v.value= _deepClone v.value
+				_defineProperty clone, k, v
+	else
+		clone= obj
+	return clone
 
 
 

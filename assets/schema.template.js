@@ -19,8 +19,10 @@ var nestedObjSchema = [
 	'ignoreJSON',	// list of attributes to be ignored when serializing as JSON
 	'virtual',		// virtual attributes
 
-	'toJSON',		// [attr, toJSONFx.call(parentObj, data, attr), ...] convert attributes
-	'toDB'			// [attr, toDBFx.call(parentObj, data, attr), ...] convert attributes
+	'toJSON',		// {attr: toJSONFx.call(parentObj, data, attr), ...] convert attributes
+	'fromJSON',		// {attr: toDBFx.call(parentObj, data, attr), ...} convert attributes
+	'toDB',			// {attr: toDBFx.call(parentObj, data, attr), ...} convert attributes
+	'fromDB'			// {attr: toDBFx.call(parentObj, data, attr), ...} convert attributes
 ];
 // attribute descriptors
 var schemaAttrDescrptr =[
@@ -56,9 +58,11 @@ var SCHEMA_DESCRIPTOR_K= [
 	// JSON
 	'jsonIgnore',
 	'toJSON',
+	'fromJSON',
 	// Database
 	'virtual',
 	'toDB',
+	'fromDB',
 	// Getter/Setter, define prototype property
 	'define',
 	// assert

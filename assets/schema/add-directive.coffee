@@ -9,6 +9,16 @@ _fxDirectiveMapper= _create null
  * // create dynamic directive
  * Model.directive 'max', (max)-> Model.assert max: max
 ###
+_overridDescriptor= (target, src)->
+	for v, i in src
+		unless v?
+			continue
+		else if typeof v is 'object' # copy object
+			target[i]= _deepClone v
+		else
+			target[i] = v
+	target
+
 _defineProperties _schemaDescriptor,
 	# create directive
 	directive: value: (name, cb)->
@@ -48,8 +58,7 @@ _defineProperties _schemaDescriptor,
 		# static descritpor
 		else if cb= cb[DESCRIPTOR]
 			_defineProperty _schemaDescriptor, strName, get: _defineDescriptorWrapper (desc)->
-				for v, i in cb
-					desc[i] = v unless v is undefined
+				_overridDescriptor desc, cb
 				return
 		# error
 		else

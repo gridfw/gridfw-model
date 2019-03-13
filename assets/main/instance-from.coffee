@@ -1,4 +1,7 @@
 
+### utils ###
+_dbAssign= (obj, k)-> (v)-> obj[k]= v
+
 ###*
  * Fast object convertion
  * from DB or any trusted source
@@ -15,10 +18,14 @@
 ###
 <%
 var fxes = ['_fastInstanceConvert', '_instanceConvert', '_validate'];
+//# si node, ajouter le fech from db
+if(isNode)
+	fxes.push('_fastInstanceConvertFetch');
 for(var i=0, len = fxes.length; i<len; ++i){
 	var fxName = fxes[i];
 	var isFullCheck= fxName === '_instanceConvert' || fxName === '_validate';
 	var isValidateOnly = fxName === '_validate';
+	var dbFetch= fxName === '_fastInstanceConvertFetch';
 %>
 <%=fxName %>= (instance)->
 	throw new Error "<%=fxName %>: Illegal arguments" unless typeof instance is 'object' and instance
@@ -42,6 +49,8 @@ for(var i=0, len = fxes.length; i<len; ++i){
 	<% } %>
 	# schema
 	schema = model[SCHEMA]
+	# store fetch promises
+	<%= dbFetch ? 'dbJobs= []' : '' %>
 	# seek
 	seekQueu = [instance, schema, []]
 	seekQueuIndex = 0
@@ -110,17 +119,17 @@ for(var i=0, len = fxes.length; i<len; ++i){
 											path: path.concat attrName
 											error: 'Required attribute is ' + attrObj
 								continue
-						else
-							if schema[i + <%= SCHEMA.attrRequired %>]
-								result.errors.push
-									required: true
-									attrName: attrName
-									path: path.concat attrName
-									error: 'required'
-							continue
-						
-						# operations
-						#=include instance-from-full-check.coffee
+							# operations
+							#=include instance-from-full-check.coffee
+							
+							# save modifitations
+							obj[attrName] = attrObj
+						else if schema[i + <%= SCHEMA.attrRequired %>]
+							result.errors.push
+								required: true
+								attrName: attrName
+								path: path.concat attrName
+								error: 'required'
 					catch err
 						<%= isValidateOnly? '' : 'delete obj[attrName]' %>
 						result.errors.push
@@ -130,6 +139,29 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 					finally
 						i+= <%= SCHEMA.attrPropertyCount %>
+				
+				# Call fromJSON
+				<% if(!isValidateOnly){ %>
+				if fromJSON= schema[<%= SCHEMA.fromJSON %>]
+					for k of fromJSON
+						if k of obj
+							obj[k]= fromJSON[k] obj[k], k, obj
+				<% } %>
+				<% } %>
+
+				# call from DB
+				<% if(dbFetch) { %>
+				if fromDB= schema[<%= SCHEMA.fromDB %>]
+					dbJobs.length= 0
+					for k of fromDB
+						if k of obj
+							fromDBResponse= fromDB[k] obj[k], k, obj
+							if fromDBResponse instanceof Promise
+								dbJobs.push fromDBResponse.then _dbAssign obj, k
+							else
+								obj[k]= fromDBResponse
+					# wait for all jobs
+					await Promise.all dbJobs if dbJobs.length
 				<% } %>
 
 				# check for nested elements
@@ -149,7 +181,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							error: err
 					# next
 					i+= <%= SCHEMA.attrPropertyCount %>
-
 
 			### List operations ###
 			else if schemaType is <%= SCHEMA.LIST %>
@@ -173,6 +204,9 @@ for(var i=0, len = fxes.length; i<len; ++i){
 								continue
 						# full check value
 						#=include instance-from-full-check.coffee
+
+						# save modifitations
+						obj[attrName] = attrObj
 						# next
 						++attrName
 					catch err
@@ -189,6 +223,25 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						<% } %>
 					finally
 						++j
+				# Call fromJSON
+				<% if(!isValidateOnly){ %>
+				if fromJSON= schema[<%= SCHEMA.fromJSON %>]?['*']
+					for attrObj, k in obj
+						obj[k]= fromJSON attrObj, k, obj
+				<% } %>
+				<% } %>
+
+				<% if(dbFetch) { %>
+				if fromDB= schema[<%= SCHEMA.fromDB %>]?['*']
+					dbJobs.length= 0
+					for attrObj, k in obj
+						fromDBResponse= fromDB attrObj, k, obj
+						if fromDBResponse instanceof Promise
+							dbJobs.push fromDBResponse.then _dbAssign obj, k
+						else
+							obj[k]= fromDBResponse
+					# wait for all jobs
+					await Promise.all dbJobs if dbJobs.length
 				<% } %>
 
 				# check for nested elements
@@ -201,7 +254,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						path: path.concat attrName
 						value: attrObj
 						error: err
-					
 
 			### Unsupported schema type ###
 			else
@@ -247,6 +299,12 @@ Model.plugin
 		 * @return {[type]}          [description]
 		###
 		fromDB: _fastInstanceConvert
+		###*
+		 * Fetch data from database
+		 * call fromDB when found
+		 * @return promise
+		###
+		<%= isNode ? 'fetch: _fastInstanceConvertFetch': '' %>
 		###*
 		 * From unstrusted source
 		 * will performe validations

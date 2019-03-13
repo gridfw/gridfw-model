@@ -4,6 +4,7 @@ gutil			= require 'gulp-util'
 include			= require "gulp-include"
 # rename			= require "gulp-rename"
 coffeescript	= require 'gulp-coffeescript'
+uglify			= require('gulp-uglify-es').default
 pug				= require 'gulp-pug'
 # through 		= require 'through2'
 # path			= require 'path'
@@ -30,16 +31,37 @@ settings=
 # 	destFileName = "grid-model-browser.js"
 
 # compile js (background, popup, ...)
-compileCoffee = ->
-	# gulp.src ["assets/node.coffee", 'assets/browser.coffee']
-	gulp.src ["assets/browser.coffee"]
-		.pipe include hardFail: true
-		.pipe GfwCompiler.template(settings).on 'error', GfwCompiler.logError
-		.pipe gulp.dest "build"
-		
-		.pipe coffeescript(bare: true).on 'error', GfwCompiler.logError
-		.pipe gulp.dest "build"
-		.on 'error', GfwCompiler.logError
+compileCoffee = (target) ->
+	->
+		# glp= gulp.src ["assets/node.coffee", 'assets/browser.coffee']
+		glp= gulp.src ["assets/#{target}.coffee"]
+			.pipe include hardFail: true
+			.pipe GfwCompiler.template({isNode: target is 'node' ,settings...}).on 'error', GfwCompiler.logError
+			# .pipe gulp.dest "build"
+			
+			.pipe coffeescript(bare: target is 'node').on 'error', GfwCompiler.logError
+
+		# if is prod
+		if settings.isProd
+			if target is 'browser'
+				glp = glp.pipe uglify
+					toplevel: no
+					compress:
+						keep_infinity: on # chrome performance issue
+						warnings: on
+			else
+				glp = glp.pipe uglify
+					module: on
+					compress:
+						toplevel: true
+						module: true
+						keep_infinity: on # chrome performance issue
+						warnings: on
+
+		glp.pipe gulp.dest "build"
+			.on 'error', GfwCompiler.logError
+compileBrowser= compileCoffee 'browser'
+compileNode= compileCoffee 'node'
 
 compileTests = ->
 	gulp.src "test-assets/**/*.coffee"
@@ -59,12 +81,12 @@ compileTestPug= ->
 # compile
 watch = (cb)->
 	unless isProd
-		gulp.watch 'assets/**/*.coffee', compileCoffee
+		gulp.watch 'assets/**/*.coffee', gulp.parallel compileBrowser, compileNode
 		gulp.watch 'test-assets/**/*.coffee', compileTests
 		gulp.watch 'test-assets/**/*.pug', compileTestPug
 	cb()
 	return
 
 # create default task
-gulp.task 'default', gulp.series ( gulp.parallel compileCoffee, compileTests, compileTestPug ), watch
+gulp.task 'default', gulp.series ( gulp.parallel compileBrowser, compileNode, compileTests, compileTestPug ), watch
 

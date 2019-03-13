@@ -2,7 +2,7 @@
   "name": "gridfw-model",
   "version": "2.0.0",
   "description": "Model Framework for javascript",
-  "main": "build/grid-model-node.js",
+  "main": "build/node.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -30,6 +30,7 @@
     "gulp-pug": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-template": "^5.0.0",
+    "gulp-uglify-es": "^1.0.4",
     "gulp-util": "^3.0.8",
     "through2": "^3.0.0"
   }

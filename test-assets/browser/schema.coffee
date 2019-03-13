@@ -53,7 +53,7 @@ try
 			# 	skillTitle: String
 			# 	skillLevel: Number
 			# 	]
-			networking:[[String]]
+			# networking:[[String]]
 	# override 2
 	Model.override
 		name: 'user'
@@ -228,9 +228,9 @@ try
 	UserModel3= Model.from
 		name: 'user3'
 		schema:
-			name: Model.String
+			name: Model.String.fromJSON (data)-> 'received: '+ data
 			lastName: Model.String
-			docs: Model.list Model.String.toJSON -> 'cccc' #.jsonIgnore
+			docs: Model.list Model.String.fromJSON (data)-> 'lst>> '+ data #.toJSON -> 'cccc'.jsonIgnore
 
 
 	user3= {name: 'khalid', lastName: 'rafik', age: 15, docs: ['u', 'k', 'iii']}

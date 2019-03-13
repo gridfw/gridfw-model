@@ -1,0 +1,10 @@
+# dev files
+assets/*
+assets-test/*
+doc/*
+tmp/*
+gulp-file.tmp.*
+build/browser.js
+
+# Dependency directories
+node_modules/

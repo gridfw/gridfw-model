@@ -68,7 +68,7 @@ _compileSchema = (schemaArch, schema)->
 					attrV= nested
 					attrN= '*'
 					#=include compile-schema-attr.coffee
-				catch e
+				catch err
 					errors.push
 						path: path.concat attrN
 						at: 'Compile List'
