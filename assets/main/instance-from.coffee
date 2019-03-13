@@ -168,10 +168,12 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				i = <%= SCHEMA.sub %>
 				len = schema.length
 				while i < len
+					# get info
+					attrName= schema[i]
+					attrObj= obj[attrName]
+
+					<% if(isFullCheck){ %>
 					try
-						# get info
-						attrName= schema[i]
-						attrObj= obj[attrName]
 						#=include instance-from-next.coffee
 					catch err
 						result.errors.push
@@ -179,6 +181,9 @@ for(var i=0, len = fxes.length; i<len; ++i){
 							path: path.concat attrName
 							value: attrObj
 							error: err
+					<% } else { %>
+					#=include instance-from-next.coffee
+					<% } %>
 					# next
 					i+= <%= SCHEMA.attrPropertyCount %>
 
