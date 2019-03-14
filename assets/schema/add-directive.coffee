@@ -19,7 +19,7 @@ _overridDescriptor= (target, src)->
 			target[i] = v
 	target
 
-_defineProperties _schemaDescriptor,
+_defineProperties Model,
 	# create directive
 	directive: value: (name, cb)->
 		<%= assertArgsLength('directive', 2) %>
@@ -28,17 +28,17 @@ _defineProperties _schemaDescriptor,
 		if typeof name is 'string'
 			strName= name
 			# check not already set
-			throw new Error "Directive already set: #{strName}" if strName of _schemaDescriptor # _owns _schemaDescriptor, strName
+			throw new Error "Directive already set: #{strName}" if strName of ModelD # _owns ModelD, strName
 		else if typeof name is 'function'
 			strName= name.name
-			throw new Error "Directive with same name already set: #{strName}" if strName of _schemaDescriptor
+			throw new Error "Directive with same name already set: #{strName}" if strName of ModelD
 			# map function
 			_fxDirectiveMapper[strName]= name
 
 		# dynamic descriptor
 		if typeof cb is 'function'
 			# define
-			_defineProperty _schemaDescriptor, strName, value: ->
+			_defineProperty ModelD, strName, value: ->
 				# descriptor
 				dsrp= @[DESCRIPTOR]
 				if dsrp
@@ -57,7 +57,7 @@ _defineProperties _schemaDescriptor,
 
 		# static descritpor
 		else if cb= cb[DESCRIPTOR]
-			_defineProperty _schemaDescriptor, strName, get: _defineDescriptorWrapper (desc)->
+			_defineProperty ModelD, strName, get: _defineDescriptorWrapper (desc)->
 				_overridDescriptor desc, cb
 				return
 		# error

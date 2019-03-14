@@ -6,7 +6,7 @@ _defineProperty Model, 'plugin', value: (options)->
 	throw new Error 'plugin>> Argument is null' unless options
 	# Model properties
 	if 'Model' of options
-		_defineProperties Model, Object.getOwnPropertyDescriptors options.Model
+		_defineProperties ModelP, Object.getOwnPropertyDescriptors options.Model
 
 	# Model factory properties
 	if 'model' of options

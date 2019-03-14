@@ -1,7 +1,9 @@
 ###*
  * Get registred Model
 ###
-_defineProperty Model, 'get', value: (modelName)-> @all[modelName]
+_defineProperty ModelP, 'get', value: (modelName)->
+	throw new Error 'Expected string' unless typeof modelName is 'string'
+	@all[modelName.toLowerCase()]
 
 ###*
  * Create new Model from schema
@@ -11,13 +13,13 @@ _defineProperty Model, 'get', value: (modelName)-> @all[modelName]
  * @optional @param {boolean} options.setters - create setters (.setAttr -> .attr) @default true
  * @optional @param {boolean} options.getters - create getters (.getAttr -> .attr) @default false
 ###
-_defineProperty Model, 'from', value: (options)->
+_defineProperty ModelP, 'from', value: (options)->
 	<%= assertArgTypes('Model.from', 'plain object') %>
 
 	# check the name of the model
 	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
-	throw new Error "Model alreay set: #{modelName}" if modelName of @all
+	throw new Error "Model alreay set: #{modelName}" if @all.hasOwnProperty modelName 
 
 	# check and compile schema
 	schema= options.schema
@@ -68,7 +70,9 @@ _defineProperty Model, 'from', value: (options)->
 	if 'static' of options
 		_defineProperties model, Object.getOwnPropertyDescriptors options.static
 	# add to registry
-	@all[modelName] = model
+	_defineProperty @all, modelName,
+		value: model
+		enumerable: yes
 	# return model
 	model
 
@@ -78,14 +82,14 @@ _defineProperty Model, 'from', value: (options)->
  * @param {plain object} options.schema - Model schema
  * @optional @param {plain object} options.static - static properties
 ###
-_defineProperty Model, 'override', value: (options)->
+_defineProperty ModelP, 'override', value: (options)->
 	throw new Error "Illegal arguments" unless arguments.length is 1 and typeof options is 'object' and options
 	# check the name of the model
 	throw new Error "Model name is required" unless 'name' of options
 	throw new Error "Model name expected string" unless typeof options.name is 'string'
 	modelName = options.name.toLowerCase()
+	throw new Error "Unknown Model: #{modelName}" unless @all.hasOwnProperty modelName
 	model = @all[modelName]
-	throw new Error "Unknown Model: #{modelName}" unless model
 	# override schema
 	if 'schema' of options
 		errors = _compileSchema options.schema, model[SCHEMA]

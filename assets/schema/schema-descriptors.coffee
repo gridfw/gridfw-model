@@ -9,10 +9,10 @@ _defineDescriptor= (k, v)->
 			throw new Error "Illegal function at: #{k}"
 		# getter
 		when 1
-			_defineProperty _schemaDescriptor, k, get: _defineDescriptorWrapper v
+			_defineProperty ModelD, k, get: _defineDescriptorWrapper v
 		# function
 		else
-			_defineProperty _schemaDescriptor, k, value: _defineDescriptorWrapper v
+			_defineProperty ModelD, k, value: _defineDescriptorWrapper v
 	return
 ###*
  * Define descriptors
@@ -49,7 +49,7 @@ _defaultDescriptor = ->
 	# create descriptor
 	desc = []
 	# return schema descriptor
-	obj = _create _schemaDescriptor,
+	obj = _create ModelD,
 		[DESCRIPTOR]: value: desc
 	return obj
 _defineDescriptorWrapper= (fx)->

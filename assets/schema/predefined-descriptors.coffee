@@ -453,10 +453,10 @@ _defineDescriptors
 		if typeof arg is 'function'
 			# check if registred directive
 			if _fxDirectiveMapper[arg.name] is arg
-				arg= Model[arg.name]
+				arg= ModelD[arg.name]
 			# if date.now, set it as default value
 			else if arg is Date.now
-				arg= Model.default arg
+				arg= ModelD.default arg
 			# else add this function as prototype property
 			else
 				descriptor[<%= SCHEMA_DESC.define %>]= value: arg
@@ -467,16 +467,16 @@ _defineDescriptors
 		else if Array.isArray arg
 			switch arg.length
 				when 1
-					arg= Model.list arg[0]
+					arg= ModelD.list arg[0]
 				when 0
-					arg= Model.list Model.Mixed
+					arg= ModelD.list ModelD.Mixed
 				else
 					throw new Error "One type is expected for Array, #{arg.length} are given."
 		# nested object
 		else if typeof arg is 'object'
 			unless arg[DESCRIPTOR]
 				descriptor[<%= SCHEMA_DESC.nested %>]= arg
-				arg= Model.Object
+				arg= ModelD.Object
 		# error
 		else
 			throw new Error "Illegal attribute descriptor"
@@ -503,7 +503,7 @@ _defineDescriptors
 		for v, i in _ARRAY_DIRECTIVE_DESCRIPTOR
 			descriptor[i]= v unless v is undefined
 		# nested value
-		descriptor[<%= SCHEMA_DESC.nested %>]= Model.value arg
+		descriptor[<%= SCHEMA_DESC.nested %>]= ModelD.value arg
 		return
 	listMethods: (descriptor, methods)->
 		proto= descriptor[<%= SCHEMA_DESC.listProto %>] ?= _create null

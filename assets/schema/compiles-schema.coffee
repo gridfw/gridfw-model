@@ -21,7 +21,7 @@ _compileSchema = (schemaArch, schema)->
 			# get descriptor
 			descriptor= schemaArch[DESCRIPTOR]
 			unless descriptor
-				schemaArch= Model.value schemaArch
+				schemaArch= ModelD.value schemaArch
 				descriptor= schemaArch[DESCRIPTOR] 
 			# compile descriptor
 			# compile: index, (value, descriptor, schema)

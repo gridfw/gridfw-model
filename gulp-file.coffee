@@ -9,14 +9,17 @@ pug				= require 'gulp-pug'
 # through 		= require 'through2'
 # path			= require 'path'
 # PKG				= require './package.json'
-
-GfwCompiler		= require '../compiler'
+GfwCompiler		= require <%= isProd ? "'gridfw-compiler'" : "'../compiler'" %>
 
 # settings
-isProd= gutil.env.hasOwnProperty('prod')
+isProd= <%= isProd %>
 settings=
 	isProd: isProd
 
+<%
+const uglfyExpNode= '.pipe uglify {module: on, compress: {toplevel: true, module: true, keep_infinity: on, warnings: on} }'
+const uglfyExpBrowser= '.pipe uglify {compress: {toplevel: no, keep_infinity: on, warnings: on} }'
+%>
 
 # check arguments
 # SUPPORTED_MODES = ['node', 'browser']
@@ -42,21 +45,11 @@ compileCoffee = (target) ->
 			.pipe coffeescript(bare: target is 'node').on 'error', GfwCompiler.logError
 
 		# if is prod
-		if settings.isProd
+		if isProd
 			if target is 'browser'
-				glp = glp.pipe uglify
-					toplevel: no
-					compress:
-						keep_infinity: on # chrome performance issue
-						warnings: on
+				glp = glp<%=uglfyExpBrowser %>
 			else
-				glp = glp.pipe uglify
-					module: on
-					compress:
-						toplevel: true
-						module: true
-						keep_infinity: on # chrome performance issue
-						warnings: on
+				glp = glp<%=uglfyExpNode %>
 
 		glp.pipe gulp.dest "build"
 			.on 'error', GfwCompiler.logError

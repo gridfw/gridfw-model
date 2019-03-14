@@ -1,4 +1,4 @@
-_defineProperties Model,
+_defineProperties ModelP,
 	# ignore properties (used with filters)
 	ignoreProps: ->
 		ignoredProperties= Array.from arguments

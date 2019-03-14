@@ -20,7 +20,7 @@ ModelStatics = _create Function.prototype,
 	toString: value: -> "[Model #{@name}]"
 
 ### Add symbols ###
-_defineProperties Model,
+_defineProperties ModelP,
 	SCHEMA: value: SCHEMA # link object to it's schema
 	TYPE_ATTR: value: TYPE_ATTR
 

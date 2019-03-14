@@ -6,7 +6,7 @@
 ###
 
 # check not Model
-throw "Illegal use of Model" if attrV is Model
+throw "Illegal use of Model" if attrV instanceof Model
 
 # attr name
 schema[attrI] = attrN
@@ -16,7 +16,7 @@ schema[attrI+ <%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.field %>
 # get attribute descriptor
 attrDescriptor= attrV[DESCRIPTOR]
 unless attrDescriptor
-	attrV= Model.value attrV
+	attrV= ModelD.value attrV
 	attrDescriptor= attrV[DESCRIPTOR]
 
 # descriptor check

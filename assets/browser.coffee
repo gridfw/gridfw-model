@@ -1,7 +1,8 @@
 
 #=include index.coffee
 # interface
-window.Model = Model
+window.ModelClass= Model
+window.Model = new Model()
 
 # objectId wrapper
 class ObjectId
