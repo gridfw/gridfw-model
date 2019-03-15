@@ -17,16 +17,14 @@ pug = require('gulp-pug');
 // through 		= require 'through2'
 // path			= require 'path'
 // PKG				= require './package.json'
-GfwCompiler = require('../compiler');
+GfwCompiler = require('gridfw-compiler');
 
 // settings
-isProd = false;
+isProd = true;
 
 settings = {
   isProd: isProd
 };
-
-console.log('---- shit');
 
 // check arguments
 // SUPPORTED_MODES = ['node', 'browser']
@@ -44,7 +42,6 @@ console.log('---- shit');
 compileCoffee = function(target) {
   return function() {
     var glp;
-    console.log('----- targt: ', target);
     // glp= gulp.src ["assets/node.coffee", 'assets/browser.coffee']
     glp = gulp.src([`assets/${target}.coffee`]).pipe(include({
       hardFail: true

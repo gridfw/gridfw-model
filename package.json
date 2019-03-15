@@ -1,6 +1,6 @@
 {
   "name": "gridfw-model",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Model Framework for javascript",
   "main": "build/node.js",
   "scripts": {
@@ -23,6 +23,7 @@
   "homepage": "https://github.com/gridfw/gridfw-model#readme",
   "devDependencies": {
     "cli-table": "^0.3.1",
+    "gridfw-compiler": "^1.1.1",
     "gulp": "^4.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-coffeescript": "0.0.15",
