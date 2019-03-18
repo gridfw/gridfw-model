@@ -23,6 +23,9 @@ ModelStatics = _create Function.prototype,
 _defineProperties ModelP,
 	SCHEMA: value: SCHEMA # link object to it's schema
 	TYPE_ATTR: value: TYPE_ATTR
+_defineProperties Model,
+	SCHEMA: value: SCHEMA # link object to it's schema
+	TYPE_ATTR: value: TYPE_ATTR
 
 
 #=include plugin.coffee

@@ -1,4 +1,4 @@
-var GfwCompiler, coffeescript, compileBrowser, compileCoffee, compileNode, compileTestPug, compileTests, gulp, gutil, include, isProd, pug, settings, uglify, watch;
+var GfwCompiler, coffeescript, compileBrowser, compileNode, compileTestPug, compileTests, gulp, gutil, include, isProd, pug, rename, settings, uglify, watch;
 
 gulp = require('gulp');
 
@@ -7,7 +7,8 @@ gutil = require('gulp-util');
 // minify		= require 'gulp-minify'
 include = require("gulp-include");
 
-// rename			= require "gulp-rename"
+rename = require("gulp-rename");
+
 coffeescript = require('gulp-coffeescript');
 
 uglify = require('gulp-uglify-es').default;
@@ -37,50 +38,41 @@ settings = {
 // 	destFileName = PKG.main.split('/')[1]
 // else
 // 	destFileName = "grid-model-browser.js"
-
-// compile js (background, popup, ...)
-compileCoffee = function(target) {
-  return function() {
-    var glp;
-    // glp= gulp.src ["assets/node.coffee", 'assets/browser.coffee']
-    glp = gulp.src([`assets/${target}.coffee`]).pipe(include({
-      hardFail: true
-    })).pipe(GfwCompiler.template({
-      isNode: target === 'node',
-      ...settings
-    // .pipe gulp.dest "build"
-    }).on('error', GfwCompiler.logError)).pipe(coffeescript({
-      bare: target === 'node'
-    }).on('error', GfwCompiler.logError));
-    // if is prod
-    if (isProd) {
-      if (target === 'browser') {
-        glp = glp.pipe(uglify({
-          compress: {
-            toplevel: false,
-            keep_infinity: true,
-            warnings: true
-          }
-        }));
-      } else {
-        glp = glp.pipe(uglify({
-          module: true,
-          compress: {
-            toplevel: true,
-            module: true,
-            keep_infinity: true,
-            warnings: true
-          }
-        }));
-      }
+compileBrowser = function() {
+  return gulp.src(["assets/browser.coffee"]).pipe(include({
+    hardFail: true
+  })).pipe(GfwCompiler.template({
+    isNode: false,
+    ...settings
+  }).on('error', GfwCompiler.logError)).pipe(coffeescript({
+    bare: false
+  }).on('error', GfwCompiler.logError)).pipe(rename('browser-model.js')).pipe(uglify({
+    compress: {
+      toplevel: false,
+      keep_infinity: true,
+      warnings: true
     }
-    return glp.pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
-  };
+  })).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
 };
 
-compileBrowser = compileCoffee('browser');
-
-compileNode = compileCoffee('node');
+compileNode = function() {
+  return gulp.src(["assets/node.coffee"]).pipe(include({
+    hardFail: true
+  })).pipe(GfwCompiler.template({
+    isNode: true,
+    ...settings
+  }).on('error', GfwCompiler.logError)).pipe(coffeescript({
+    bare: true
+  }).on('error', GfwCompiler.logError)).pipe(uglify({
+    module: true,
+    compress: {
+      toplevel: true,
+      module: true,
+      keep_infinity: true,
+      warnings: true
+    }
+  })).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
+};
 
 compileTests = function() {
   return gulp.src("test-assets/**/*.coffee").pipe(include({

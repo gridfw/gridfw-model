@@ -62,3 +62,4 @@ typings/
 gulp-file.tmp.*
 build/*
 test-build/*
+gulp-file.js

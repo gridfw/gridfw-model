@@ -2,7 +2,7 @@ gulp			= require 'gulp'
 gutil			= require 'gulp-util'
 # minify		= require 'gulp-minify'
 include			= require "gulp-include"
-# rename			= require "gulp-rename"
+rename			= require "gulp-rename"
 coffeescript	= require 'gulp-coffeescript'
 uglify			= require('gulp-uglify-es').default
 pug				= require 'gulp-pug'
@@ -33,28 +33,23 @@ const uglfyExpBrowser= '.pipe uglify {compress: {toplevel: no, keep_infinity: on
 # else
 # 	destFileName = "grid-model-browser.js"
 
-# compile js (background, popup, ...)
-compileCoffee = (target) ->
-	->
-		# glp= gulp.src ["assets/node.coffee", 'assets/browser.coffee']
-		glp= gulp.src ["assets/#{target}.coffee"]
-			.pipe include hardFail: true
-			.pipe GfwCompiler.template({isNode: target is 'node' ,settings...}).on 'error', GfwCompiler.logError
-			# .pipe gulp.dest "build"
-			
-			.pipe coffeescript(bare: target is 'node').on 'error', GfwCompiler.logError
-
-		# if is prod
-		if isProd
-			if target is 'browser'
-				glp = glp<%=uglfyExpBrowser %>
-			else
-				glp = glp<%=uglfyExpNode %>
-
-		glp.pipe gulp.dest "build"
-			.on 'error', GfwCompiler.logError
-compileBrowser= compileCoffee 'browser'
-compileNode= compileCoffee 'node'
+compileBrowser= ->
+	gulp.src ["assets/browser.coffee"]
+		.pipe include hardFail: true
+		.pipe GfwCompiler.template({isNode: no ,settings...}).on 'error', GfwCompiler.logError
+		.pipe coffeescript(bare: no).on 'error', GfwCompiler.logError
+		.pipe rename 'browser-model.js'
+		<%= isProd ? uglfyExpBrowser : '' %>
+		.pipe gulp.dest "build"
+		.on 'error', GfwCompiler.logError
+compileNode= ->
+	gulp.src ["assets/node.coffee"]
+		.pipe include hardFail: true
+		.pipe GfwCompiler.template({isNode: yes ,settings...}).on 'error', GfwCompiler.logError
+		.pipe coffeescript(bare: yes).on 'error', GfwCompiler.logError
+		<%= isProd ? uglfyExpNode : '' %>
+		.pipe gulp.dest "build"
+		.on 'error', GfwCompiler.logError
 
 compileTests = ->
 	gulp.src "test-assets/**/*.coffee"
