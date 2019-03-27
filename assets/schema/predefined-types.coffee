@@ -219,7 +219,7 @@ Model
 		# match regex
 		match:
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
-			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data.href
+			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data
 .directive String, # String, HTML escaped
 	ModelP.Text
 	.type 'String'

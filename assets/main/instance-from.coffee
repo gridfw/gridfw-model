@@ -28,7 +28,8 @@ for(var i=0, len = fxes.length; i<len; ++i){
 	var dbFetch= fxName === '_fastInstanceConvertFetch';
 %>
 <%=fxName %>= (instance)->
-	throw new Error "<%=fxName %>: Illegal arguments" unless typeof instance is 'object' and instance
+	return unless instance?
+	throw new Error "<%=fxName %>: Illegal arguments" unless typeof instance is 'object'
 	rootModel = @Model
 	# get model
 	model = this

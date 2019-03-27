@@ -285,16 +285,8 @@ _defineDescriptors
 	getterOnce: (descriptor, fx)->
 		throw new Error "function expected" unless typeof fx is 'function'
 		throw new Error "Getter expects no argument" unless fx.length is 0
-		descr= descriptor[<%= SCHEMA_DESC.define %>] ?= _create null
 		descriptor[<%= SCHEMA_DESC.type %>]= "<GETTER ONCE>"
-		descr.get= ->
-			vl = fx.call this
-			_defineProperty this, attr,
-				value: vl
-				configurable: on
-				enumerable: on
-				writable: on
-			return vl
+		descriptor[<%= SCHEMA_DESC.getterOnce %>]= fx
 		return
 	# setter
 	setter: (descriptor, fx)->
@@ -329,6 +321,18 @@ _descriptorCheck (descriptor)->
 # compile
 _defineParentSchemaCompiler <%= SCHEMA_DESC.define %>, (def, attr, schema, proto, attrPos)->
 	_defineProperty proto, attr, def
+	schema[attrPos+<%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.define %>
+	return
+_defineParentSchemaCompiler <%= SCHEMA_DESC.getterOnce %>, (fx, attr, schema, proto, attrPos)->
+	_defineProperty proto, attr,
+		get: ->
+			vl = fx.call this
+			_defineProperty this, attr,
+				value: vl
+				configurable: on
+				enumerable: on
+				writable: on
+			return vl
 	schema[attrPos+<%= SCHEMA.attrTypeOf %>]= <%= attrTypeOf.define %>
 	return
 

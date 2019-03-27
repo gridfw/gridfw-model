@@ -65,6 +65,7 @@ var SCHEMA_DESCRIPTOR_K= [
 	'fromDB',
 	// Getter/Setter, define prototype property
 	'define',
+	'getterOnce',
 	// assert
 	'asserts', // asserts queue
 	'assertPredefined',// predefined asserts

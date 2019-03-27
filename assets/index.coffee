@@ -49,25 +49,21 @@ ModelP.debug= console.debug.bind console
 _setPrototypeOf ModelP, ModelD
 
 # coredigix xss
-#TODO
-xssCleanNoImages = (data)->
-	# if xssClean?
-	# 	xssCleanNoImages= (data) -> xssClean data, imgs: off
-	# 	return xssCleanNoImages(data)
-	# else
-	ModelP.warn 'Coredigix xss cleaner is missing'
-	data
-xssCleanWithImages = (data)->
-	# if xssClean?
-	# 	xssCleanNoImages= (data) -> xssClean data, imgs: on
-	# 	return xssCleanNoImages(data)
-	# else
-	ModelP.warn 'Coredigix xss cleaner is missing'
-	data
-
-xssEscape = (data)->
-	ModelP.warn 'Coredigix xss cleaner is missing'
-	data
+if xssClean?
+	xssCleanHtml= xssClean.clean
+	xssCleanNoImages = (data)-> xssCleanHtml data, imgs: off
+	xssCleanWithImages = (data)-> xssCleanHtml data, imgs: on
+	xssEscape = xssClean.escape
+else
+	xssCleanNoImages = (data)->
+		ModelP.warn 'Coredigix xss cleaner is missing'
+		data
+	xssCleanWithImages = (data)->
+		ModelP.warn 'Coredigix xss cleaner is missing'
+		data
+	xssEscape = (data)->
+		ModelP.warn 'Coredigix xss cleaner is missing'
+		data
 
 # main
 #=include main/index.coffee

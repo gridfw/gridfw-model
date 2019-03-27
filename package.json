@@ -34,5 +34,8 @@
     "gulp-uglify-es": "^1.0.4",
     "gulp-util": "^3.0.8",
     "through2": "^3.0.0"
+  },
+  "dependencies": {
+    "coredigix-xss": "^1.0.0"
   }
 }

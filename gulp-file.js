@@ -18,10 +18,10 @@ pug = require('gulp-pug');
 // through 		= require 'through2'
 // path			= require 'path'
 // PKG				= require './package.json'
-GfwCompiler = require('gridfw-compiler');
+GfwCompiler = require('../compiler');
 
 // settings
-isProd = true;
+isProd = false;
 
 settings = {
   isProd: isProd
@@ -46,13 +46,7 @@ compileBrowser = function() {
     ...settings
   }).on('error', GfwCompiler.logError)).pipe(coffeescript({
     bare: false
-  }).on('error', GfwCompiler.logError)).pipe(rename('browser-model.js')).pipe(uglify({
-    compress: {
-      toplevel: false,
-      keep_infinity: true,
-      warnings: true
-    }
-  })).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
+  }).on('error', GfwCompiler.logError)).pipe(rename('browser-model.js')).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
 };
 
 compileNode = function() {
@@ -63,15 +57,7 @@ compileNode = function() {
     ...settings
   }).on('error', GfwCompiler.logError)).pipe(coffeescript({
     bare: true
-  }).on('error', GfwCompiler.logError)).pipe(uglify({
-    module: true,
-    compress: {
-      toplevel: true,
-      module: true,
-      keep_infinity: true,
-      warnings: true
-    }
-  })).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
+  }).on('error', GfwCompiler.logError)).pipe(gulp.dest("build")).on('error', GfwCompiler.logError);
 };
 
 compileTests = function() {
