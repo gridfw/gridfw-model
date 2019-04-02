@@ -36,6 +36,7 @@
     "through2": "^3.0.0"
   },
   "dependencies": {
-    "coredigix-xss": "^1.0.0"
+    "coredigix-xss": "^1.0.0",
+    "mongodb": "^3.2.2"
   }
 }
