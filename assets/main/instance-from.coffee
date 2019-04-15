@@ -197,15 +197,16 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				attrCheck= schema[<%= SCHEMA.sub + SCHEMA.attrCheck %>]
 				attrConvert= schema[<%= SCHEMA.sub + SCHEMA.attrConvert %>]
 				i= <%= SCHEMA.sub %>
+				attrIsNull= schema[<%= SCHEMA.sub + SCHEMA.attrNull %>] is yes # attr could be null
 				j= 0
 				attrName= 0
 				listLen = obj.length
-				while i < listLen
+				while attrName < listLen
 					try
 						attrObj= obj[attrName]
 						# check not null
 						unless attrObj?
-							if schema[i + <%= SCHEMA.attrNull %>] is yes
+							if attrIsNull
 								obj.splice attrName, 1 # remove this value
 								continue
 						# full check value
@@ -226,6 +227,9 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						<% if(!isValidateOnly){ %>
 						obj.splice attrName, 1
 						listLen = obj.length # recalc obj length
+						<% } else { %>
+						# next
+						++attrName
 						<% } %>
 					finally
 						++j
