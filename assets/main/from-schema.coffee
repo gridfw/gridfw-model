@@ -29,7 +29,7 @@ _defineProperty ModelP, 'from', value: (options)->
 	compiledSchema[<%= SCHEMA.extensible %>] = if options.schema[DESCRIPTOR]?.extensible then on else off
 	# compile schema
 	errors = _compileSchema options.schema, compiledSchema
-	throw new SchemaError "Schema contains #{errors.length} errors.", errors if errors.length
+	throw new SchemaError "#{modelName} schema contains #{errors.length} errors.", errors if errors.length
 
 	# Create Model
 	# model prototype
@@ -93,7 +93,7 @@ _defineProperty ModelP, 'override', value: (options)->
 	# override schema
 	if 'schema' of options
 		errors = _compileSchema options.schema, model[SCHEMA]
-		throw new SchemaError "Schema contains #{errors.length} errors.", errors if errors.length
+		throw new SchemaError "#{modelName} schema contains #{errors.length} errors.", errors if errors.length
 	# override static properties
 	if 'static' of options
 		_defineProperties model, Object.getOwnPropertyDescriptors options.static
