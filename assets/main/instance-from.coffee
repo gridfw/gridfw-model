@@ -17,15 +17,16 @@ _dbAssign= (obj, k)-> (v)-> obj[k]= v
  * @param {Object} instance - instance to convert and validate
 ###
 <%
-var fxes = ['_fastInstanceConvert', '_instanceConvert', '_validate'];
+var fxes = ['_fastInstanceConvert', '_instanceConvert', '_cleanJSON', '_validate'];
 //# si node, ajouter le fech from db
 if(isNode)
 	fxes.push('_fastInstanceConvertFetch');
 for(var i=0, len = fxes.length; i<len; ++i){
 	var fxName = fxes[i];
-	var isFullCheck= fxName === '_instanceConvert' || fxName === '_validate';
+	var isFullCheck= fxName === '_instanceConvert' || fxName === '_cleanJSON' || fxName === '_validate'
 	var isValidateOnly = fxName === '_validate';
 	var dbFetch= fxName === '_fastInstanceConvertFetch';
+	var keepPrototype= fxName === '_cleanJSON';
 %>
 <%=fxName %>= (instance)->
 	return unless instance?
@@ -63,6 +64,11 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			path= seekQueu[++seekQueuIndex]
 			++seekQueuIndex
 			schemaType = schema[<%= SCHEMA.schemaType %>]
+
+			# if keep prototype (do not convert to type Model)
+			<% if(keepPrototype) { %>
+			orignalProto= Object.getPrototypeOf obj
+			<% } %>
 
 			### Object operations ###
 			if schemaType is <%= SCHEMA.OBJECT %>
@@ -269,8 +275,13 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			else
 				throw new Error 'Illegal schema type'
 			# set prototype of
+			<% if(keepPrototype) { %>
+			_setPrototypeOf obj, orignalProto
+			<% }else{ %>
+			# set schema and proto
 			obj[SCHEMA] = schema
 			_setPrototypeOf obj, schema[<%= SCHEMA.proto %>]
+			<% } %>
 		catch err
 			console.log '*** got ERROR: ', err
 			<% if(isFullCheck){ %>
@@ -325,3 +336,7 @@ Model.plugin
 		 * validate
 		###
 		validate: _validate
+		###*
+		 * Clean JSON (do not convert to type Model)
+		###
+		cleanJSON: _cleanJSON
