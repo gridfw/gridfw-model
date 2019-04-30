@@ -78,7 +78,10 @@ Model
 ###
 .directive Object, _OBJECT_DIRECTIVE
 .directive Array, _ARRAY_DIRECTIVE
-.directive 'Mixed', ModelP.type('Mixed').check -> true
+.directive 'Mixed',
+	ModelP.type 'Mixed'
+	.check -> true
+	.convert (data) -> data
 ###
 # Boolean
 ###
