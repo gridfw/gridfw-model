@@ -1,6 +1,6 @@
 {
   "name": "gridfw-model",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "Model Framework for javascript",
   "main": "build/node.js",
   "scripts": {
@@ -23,20 +23,20 @@
   "homepage": "https://github.com/gridfw/gridfw-model#readme",
   "devDependencies": {
     "cli-table": "^0.3.1",
-    "gridfw-compiler": "^1.1.1",
-    "gulp": "^4.0.0",
+    "gridfw-compiler": "^1.2.0",
+    "gulp": "^4.0.2",
     "gulp-chug": "^0.5.1",
     "gulp-coffeescript": "0.0.15",
-    "gulp-include": "^2.3.1",
+    "gulp-include": "^2.4.1",
     "gulp-pug": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-template": "^5.0.0",
     "gulp-uglify-es": "^1.0.4",
     "gulp-util": "^3.0.8",
-    "through2": "^3.0.0"
+    "through2": "^3.0.1"
   },
   "dependencies": {
     "coredigix-xss": "^1.0.0",
-    "mongodb": "^3.2.2"
+    "mongodb": "^3.2.4"
   }
 }
