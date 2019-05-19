@@ -213,8 +213,11 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						# check not null
 						unless attrObj?
 							if attrIsNull
+								++attrName #ignore this null or undefined value
+							else
 								obj.splice attrName, 1 # remove this value
-								continue
+								listLen = obj.length # recalc obj length
+							continue
 						# full check value
 						#=include instance-from-full-check.coffee
 
@@ -283,7 +286,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 			_setPrototypeOf obj, schema[<%= SCHEMA.proto %>]
 			<% } %>
 		catch err
-			console.log '*** got ERROR: ', err
 			<% if(isFullCheck){ %>
 			result.errors.push
 				path: path
