@@ -76,8 +76,31 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				throw new Error 'Expected plain object' if Array.isArray obj
 				_setPrototypeOf obj, null
 
+				# call from DB
+				<% if(dbFetch) { %>
+				if fromDB= schema[<%= SCHEMA.fromDB %>]
+					dbJobs.length= 0
+					for k of fromDB
+						if k of obj
+							fromDBResponse= fromDB[k] obj[k], k, obj
+							if fromDBResponse instanceof Promise
+								dbJobs.push fromDBResponse.then _dbAssign obj, k
+							else
+								obj[k]= fromDBResponse
+					# wait for all jobs
+					await Promise.all dbJobs if dbJobs.length
+				<% } %>
+
 				# full check
 				<% if(isFullCheck){ %>
+				
+				# Call fromJSON
+				<% if(!isValidateOnly){ %>
+				if fromJSON= schema[<%= SCHEMA.fromJSON %>]
+					for k of fromJSON
+						if k of obj
+							obj[k]= fromJSON[k] obj[k], k, obj
+				<% } %>
 
 				<% if(!isValidateOnly){ %>
 				# remove other attributes if not extensible
@@ -147,28 +170,6 @@ for(var i=0, len = fxes.length; i<len; ++i){
 					finally
 						i+= <%= SCHEMA.attrPropertyCount %>
 				
-				# Call fromJSON
-				<% if(!isValidateOnly){ %>
-				if fromJSON= schema[<%= SCHEMA.fromJSON %>]
-					for k of fromJSON
-						if k of obj
-							obj[k]= fromJSON[k] obj[k], k, obj
-				<% } %>
-				<% } %>
-
-				# call from DB
-				<% if(dbFetch) { %>
-				if fromDB= schema[<%= SCHEMA.fromDB %>]
-					dbJobs.length= 0
-					for k of fromDB
-						if k of obj
-							fromDBResponse= fromDB[k] obj[k], k, obj
-							if fromDBResponse instanceof Promise
-								dbJobs.push fromDBResponse.then _dbAssign obj, k
-							else
-								obj[k]= fromDBResponse
-					# wait for all jobs
-					await Promise.all dbJobs if dbJobs.length
 				<% } %>
 
 				# check for nested elements
@@ -200,6 +201,28 @@ for(var i=0, len = fxes.length; i<len; ++i){
 				
 				# full check
 				<% if(isFullCheck){ %>
+
+				# Call fromJSON
+				<% if(!isValidateOnly){ %>
+				if fromJSON= schema[<%= SCHEMA.fromJSON %>]?['*']
+					for attrObj, k in obj
+						obj[k]= fromJSON attrObj, k, obj
+				<% } %>
+
+				<% if(dbFetch) { %>
+				if fromDB= schema[<%= SCHEMA.fromDB %>]?['*']
+					dbJobs.length= 0
+					for attrObj, k in obj
+						fromDBResponse= fromDB attrObj, k, obj
+						if fromDBResponse instanceof Promise
+							dbJobs.push fromDBResponse.then _dbAssign obj, k
+						else
+							obj[k]= fromDBResponse
+					# wait for all jobs
+					await Promise.all dbJobs if dbJobs.length
+				<% } %>
+
+				# loop
 				attrCheck= schema[<%= SCHEMA.sub + SCHEMA.attrCheck %>]
 				attrConvert= schema[<%= SCHEMA.sub + SCHEMA.attrConvert %>]
 				i= <%= SCHEMA.sub %>
@@ -242,27 +265,7 @@ for(var i=0, len = fxes.length; i<len; ++i){
 						<% } %>
 					finally
 						++j
-				# Call fromJSON
-				<% if(!isValidateOnly){ %>
-				if fromJSON= schema[<%= SCHEMA.fromJSON %>]?['*']
-					for attrObj, k in obj
-						obj[k]= fromJSON attrObj, k, obj
 				<% } %>
-				<% } %>
-
-				<% if(dbFetch) { %>
-				if fromDB= schema[<%= SCHEMA.fromDB %>]?['*']
-					dbJobs.length= 0
-					for attrObj, k in obj
-						fromDBResponse= fromDB attrObj, k, obj
-						if fromDBResponse instanceof Promise
-							dbJobs.push fromDBResponse.then _dbAssign obj, k
-						else
-							obj[k]= fromDBResponse
-					# wait for all jobs
-					await Promise.all dbJobs if dbJobs.length
-				<% } %>
-
 				# check for nested elements
 				i= <%= SCHEMA.sub %>
 				for attrObj, attrName in obj
