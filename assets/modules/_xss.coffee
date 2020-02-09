@@ -4,6 +4,6 @@
 _xss= (data, options) ->
 	return
 _defineProperties Model,
-	xssEscape: ->
-	xss: ->
-	xssNoImages: ->
+	xss: value: _xss
+	xssEscape: value: ->
+	xssNoImages: value: -> (data)-> _xss data, img: no

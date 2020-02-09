@@ -11,7 +11,6 @@ HEX_CHECK	= /^[0-9a-f]+$/i
  * Predefined types
 ###
 Model
-# .addType 'Mixed'
 # OBJECT
 .addType 'Object', Model.check (data)-> typeof data is 'object' and not Array.isArray data
 # LIST
@@ -142,9 +141,9 @@ Model
 			param: (value)-> throw 'Expected RegExp' unless value instanceof RegExp
 			assert: (data, regex)-> throw "Expected to match: #{regex}" unless regex.test data
 	.lte STRING_MAX_LENGTH
-.addType 'Text', Model.String.pipe Model.xssEscape # Encode HTML caracters
-.addType 'HTML', Model.String.lte(HTML_MAX_LENGTH).pipe (data)-> _xss data, img: no
-.addType 'HTMLImgs', Model.String.lte(HTML_MAX_LENGTH).pipe _xss
+.addType 'Text', Model.String.pipeOnce Model.xssEscape # Encode HTML caracters
+.addType 'HTML', Model.String.lte(HTML_MAX_LENGTH).pipeOnce Model.xssNoImages
+.addType 'HTMLImgs', Model.String.lte(HTML_MAX_LENGTH).pipeOnce Model.xss
 # Email & Password
 .addType 'Email', Model.String.match EMAIL_CHECK
 .addType 'Password', Model.String.gte(PASSWD_MIN)
