@@ -3,16 +3,15 @@
 ###
 #=include _const.coffee
 #=include _utils.coffee
-#=include main/_index.coffee
-ModelAllProxy= get: (_, k)-> throw new Error "Unknown model: #{k}"
-class BasicModel
-ModelPrototype= BasicModel.prototype
+# ModelAllProxy= get: (_, k)-> throw new Error "Unknown model: #{k}"
+# class BasicModel
+# basicModelPrototype= BasicModel.prototype
 
 
 ###*
  * Main Model interface
 ###
-class Model extends BasicModel
+class Model # extends BasicModel
 	constructor: ->
 		# attrs
 		_defineProperties this,
@@ -20,11 +19,12 @@ class Model extends BasicModel
 		return
 	###*
 	 * Define new Model
+	 * Model.define('modelName', {schema})
 	###
 	define: (modelName, schema)->
 		# checks
 		throw new Error "Model name expected string" unless typeof modelName is 'string'
-		throw new Error "Model alreay set: #{modelName}" if @all.hasOwnProperty modelName 
+		throw new Error "Model alreay set: #{modelName}" if _has @all, modelName 
 		# prepare schema
 		schema= Model.value schema
 		# Model
@@ -56,3 +56,16 @@ class Model extends BasicModel
 			enumerable: yes
 		# return
 		return model
+	###*
+	 * Override model
+	 * Model.override('modelName', {schema})
+	###
+	override: (modelName, schema)->
+		throw new Error "Unknown Model: #{modelName}" unless model = @all[modelName]
+		throw 'Unimplemented'
+		this #chain
+_modelPrototype= Model.prototype
+
+#=include main/_index.coffee
+#=include schema/_index.coffee
+#=include predefined/_index.coffee

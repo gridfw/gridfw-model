@@ -1,5 +1,38 @@
 ###*
- * Predifined directives
+ * Utils
+###
+# CB When serializing (toJSON or toDataBase)
+_toWrapper= (obj, ignoreAttrIndex, toCallbacksIndex)->
+	result= this
+	if schema= @[SCHEMA]
+		ignoreAttr= schema[ignoreAttrIndex]
+		toCbs= schema[toCallbacksIndex]
+		ignoreAttr= null unless ignoreAttr?.length
+		toCbs= null unless toCbs?.length
+		if ignoreAttr or toCbs
+			# copy object
+			result= {}
+			if ignoreAttr
+				for k,v of this
+					result[k]= v unless k in ignoreAttr
+			else
+				result[k]= v for k,v of this
+			# Convert values
+			if toCbs
+				i=0
+				len= toCbs.length
+				while i<len
+					attr= toCbs[i++]
+					cb= toCbs[i++]
+					if result.hasOwnProperty attr
+						result[attr]= cb.call this, result[attr]
+	return result
+_toJSONWrapper= -> _toWrapper(this, <%= SCHEMA.ignoreJsonAttrs %>, <%= SCHEMA.toJSON %>)
+# CB when sending to DB
+_toDBWrapper= -> _toWrapper(this, <%= SCHEMA.virtuals %>, <%= SCHEMA.toDB %>)
+
+###*
+ * PREDIFINED DIRECTIVES
 ###
 Model
 # TYPE
@@ -46,6 +79,7 @@ Model
 	# ignore when serializing
 	if json&1
 		(schema[<%= SCHEMA.ignoreJsonAttrs %>] ?= []).push attr
+		needsProto= yes
 	else if arr= schema[<%= SCHEMA.ignoreJsonAttrs %>]
 		_arrRemove arr, attr
 	# ToJSON
@@ -55,6 +89,12 @@ Model
 		else
 			arr= schema[<%= SCHEMA.toJSON %>]= []
 		arr.push attr, toJsonCb
+		needsProto= yes
+	# ToJSON cb
+	if needsProto
+		_defineProperty prototype, 'toJSON',
+			value: _toJSONWrapper
+			configurable: yes
 	# fromJSON
 	if fromJsonCb= @_fromJSON
 		if arr= schema[<%= SCHEMA.fromJSON %>]
@@ -62,12 +102,46 @@ Model
 		else
 			arr= schema[<%= SCHEMA.fromJSON %>]= []
 		arr.push attr, fromJsonCb
-	# ToJSON cb
-	#TODO toJSON cb
 	return
 
 # DATABASE
-.addDirective ''
+.addDirective ['virtual', 'transient'], -> @_virtual= yes
+.addDirective 'persist', -> @_virtual= no
+.addDirective 'toDB', 'function', (fx)-> @_toDB= fx
+.addDirective 'fromDB', 'function', (fx)-> @_fromDB= fx
+.compileAttrDirective (schema, attr, attrIndex, prototype)->
+	isVirtual= !!@_virtual
+	schema[<?=SCHEMA_ATTR.virtual ?>+attrIndex]= isVirtual	# debug purpose
+	# Add to virtual attributes
+	if isVirtual
+		(schema[<%=SCHEMA.virtuals %>] ?= []).push attr
+		needsProto= yes
+	else if virtualAttrs= schema[<%=SCHEMA.virtuals %>]
+		_arrRemove virtualAttrs, attr
+	# ToDB
+	if toDBCb= @_toDB
+		if arr= schema[<%= SCHEMA.toDB %>]
+			_arrRemove arr, attr, 2
+		else
+			arr= schema[<%= SCHEMA.toJSON %>]= []
+		arr.push attr, toDBCb
+		needsProto= yes
+	# ToDB cb
+	if needsProto
+		_defineProperty prototype, 'toDB',
+			value: _toDBWrapper
+			configurable: yes
+		_defineProperty prototype, 'toBSON',
+			value: _toDBWrapper
+			configurable: yes
+	# fromDB
+	if fromDbCb= @_fromDB
+		if arr= schema[<%= SCHEMA.fromDB %>]
+			_arrRemove arr, attr, 2
+		else
+			arr= schema[<%= SCHEMA.fromDB %>]= []
+		arr.push attr, fromDbCb
+	return
 
 # GETTER - SETTER
 .addDirective 'default',null, (mixed)-> @_get= mixed

@@ -5,6 +5,8 @@ _create= Object.create
 _defineProperty= Object.defineProperty
 _defineProperties= Object.defineProperties
 
+_has= Reflect.has
+
 # Array
 _arrRemove= (arr, value, nbrRemove)->
 	i= 0

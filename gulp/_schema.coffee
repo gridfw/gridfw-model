@@ -12,7 +12,7 @@ schemaElement= [
 	'prototype' # Element prototype
 	# 'extensible' # Do Object is extensible
 	'ignoreJsonAttrs' # attributes to ignore when serializing as JSON
-	'virtual'	# Virtual attributes
+	'virtuals'	# Virtual attributes
 
 	'toJSON'	# [attrName, toJsonCb, ...] to call when serialising as JSON
 	'fromJSON'	# [attrName, toJsonCb, ...] to call when deserializing from JSON
@@ -30,16 +30,23 @@ schemaAttrs= [
 	'null'	# Do value could be null
 	'required'	# if the attribute is required
 	'freeze'	# If the subobject is freezed (could not accept other attributes)
+	'virtual'	# debug purpose, if this attr is virtual (do not save to DB)
 
 	'getOnce'	# debug purpose
 	'getter'	# debug purpose
 	'setter'	# debug purpose
 
-	'json'
-	'ignoreJsonParse'	# when true, ignore when parsing json
+	'json'		# Debug purpose
+	'ignoreJsonParse'	# Debug purpose, when true, ignore when parsing json
 
 	'asserts'	# list of asserts
 	'pipe'		# Pipeline
 	'schema'	# subschema when object or list
 
 ]
+
+# VARS
+SCHEMA= {}
+SCHEMA[v]= k for v,k in schemaElement
+SCHEMA_ATTR= {}
+SCHEMA_ATTR[v]=k for v,k in schemaAttrs
