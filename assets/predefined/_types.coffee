@@ -12,7 +12,7 @@ HEX_CHECK	= /^[0-9a-f]+$/i
 ###
 Model
 # OBJECT
-.addType 'Object', Model.check (data)-> typeof data is 'object' and not Array.isArray data
+.addType 'Object', Model.check (data)-> typeof data is 'object' and data and not Array.isArray data
 # LIST
 .addType [Array, 'Array', 'List'],
 	Model.check (data)-> Array.isArray data
@@ -38,8 +38,33 @@ Model
 			param: _checkIsUnsigned
 			msg: 'Array length expected #{param}'
 			assert: (obj, param)-> obj.length is param
+# MAP
+_getMapLen= (obj)-> if obj instanceof Map then obj.size else _keys(obj).length
+Model.addType [Map, 'Map'],
+	Model.check (data)-> typeof data is 'object' and data and not Array.isArray data
+	.asserts
+		lt:
+			param: _checkIsUnsigned
+			msg: 'Map length expected less than #{param}'
+			assert: (obj, param)-> _getMapLen(obj) < param
+		lte:
+			param: _checkIsUnsigned
+			msg: 'Map length expected less than or equals to #{param}'
+			assert: (obj, param)-> _getMapLen(obj) <= param
+		gt:
+			param: _checkIsUnsigned
+			msg: 'Map length expected greater than #{param}'
+			assert: (obj, param)-> _getMapLen(obj) > param
+		gte:
+			param: _checkIsUnsigned
+			msg: 'Map length expected greater than or equals to #{param}'
+			assert: (obj, param)-> _getMapLen(obj) >= param
+		length:
+			param: _checkIsUnsigned
+			msg: 'Map length expected #{param}'
+			assert: (obj, param)-> _getMapLen(obj) is param
 # Boolean
-.addType [Boolean, 'Boolean'],
+Model.addType [Boolean, 'Boolean'],
 	Model.check (data) -> typeof data is 'boolean'
 	.convert (data) ->
 		throw 'Expected Boolean, got Object' if typeof data is 'object' and data

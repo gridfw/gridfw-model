@@ -144,49 +144,81 @@ Model
 	return
 
 # GETTER - SETTER
-.addDirective 'default',null, (mixed)-> @_get= mixed
+.addDirective 'default',null, (mixed)->
+	@_get= @getOnce= @_method= null
+	@_default= mixed
+	return
 .addDirective 'getter', 'function', (fx)->
-	@_getOnce= null
+	@_getOnce= @_default= @_method= null
 	@_get= fx
 	return
-.addDirective 'setter', 'function', (fx)-> @_set= fx
+.addDirective 'setter', 'function', (fx)->
+	@_method= null
+	@_set= fx
+	return
 .addDirective 'getOnce', 'function', (fx)->
-	@_get= null
+	@_get= @_default= @_method= null
 	@_getOnce= fx
 	return
 .addDirective 'alias', 'string', (attrName)->
+	@_getOnce= @_default= @_method= null
 	@_get= -> @[attrName]
 	@_set= (data)->
 		@[attrName]= data
 		return
 	return
+.addDirective 'method', 'function', (method)->
+	@_get= @set= @_getOnce= @default= null
+	@_method= method
+	return
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
+	# default
+	if (fx= @_default)?
+		schema[<?=SCHEMA_ATTR.default ?>+attrIndex]= fx	# debug purpose
+		if typeof fx is 'function'
+			fx=
+				configurable: on
+				get: fx
+		else
+			fx=
+				configurable: on
+				value: fx
+		_defineProperty prototype, attr, fx
 	# get once
-	if getOnceCb= @_getOnce
-		schema[<?=SCHEMA_ATTR.getOnce ?>+attrIndex]= getOnceCb	# debug purpose
+	else if fx= @_getOnce
+		schema[<?=SCHEMA_ATTR.getOnce ?>+attrIndex]= fx	# debug purpose
 		_defineProperty prototype, attr,
 			configurable: on
 			get: ->
-				v= getOnceCb.call this
+				v= fx.call this
 				_defineProperty this, attr,
 					value: v
 					configurable: on
 					enumerable: on
 					writable: on
 				return v
-	return
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
 	# Getter
-	if fx= @_get
+	else if fx= @_get
 		schema[<?=SCHEMA_ATTR.getter ?>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			get: fx
-			configurable: on
+		if typeof fx is 'function'
+			_defineProperty prototype, attr,
+				get: fx
+				configurable: on
+		else
+			_defineProperty prototype, attr,
+				value: fx
+				configurable: on
 	# Setter
 	if fx= @_set
 		schema[<?=SCHEMA_ATTR.setter ?>+attrIndex]= fx	# debug purpose
 		_defineProperty prototype, attr,
 			set: fx
+			configurable: on
+	# Method
+	else if fx= @_method
+		schema[<?=SCHEMA_ATTR.method ?>+attrIndex]= fx	# debug purpose
+		_defineProperty prototype, attr,
+			value: fx
 			configurable: on
 	return
 
@@ -288,7 +320,57 @@ Model.compileAttrDirective (schema, attr, attrIndex, prototype)->
 		prototype[k]= v
 	return
 
-
-
-
+# Value
+.addDirective 'value', null, (mixed)->
+	# When function
+	if typeof mixed is 'function'
+		ModelClass= @[MODEL_SYMB]
+		typesFx= ModelClass._typesFx
+		# fx represent type: example: Number
+		if desc= typesFx.get mixed
+			@_type= desc
+		# if date.now, set it as default value
+		else if mixed is Date.now
+			@default mixed
+		# else: protype Method
+		else
+			@method mixed
+	# When list
+	else if _isArray mixed
+		switch mixed.length
+			when 1
+				@list mixed[0]
+			when 0
+				@list()
+			else
+				throw new Error "Expected one type for Array, #{mixed.length} are given."
+	# nested object
+	else if typeof mixed is 'object'
+		unless mixed
+			@Object._nested= {}
+		# descriptor
+		else if desc= mixed[MODEL_SYMB]
+			for k,v of desc
+				@[k]= v if typeof k is 'string' and k.startsWith '_'
+		# nested object
+		else 
+			@Object._nested= mixed
+	else
+		throw new Error "Illegal value"
+	return
+.addDirective 'list', null, (mixed)->
+	@List._nested= @[MODEL_SYMB].value mixed
+	return
+.addDirective 'map', null, null, (key, value)->
+	ModelClass= @[MODEL_SYMB]
+	@Map
+	@_nested= ModelClass.value value
+	@_key= ModelClass.value key
+	return
+.compileAttrDirective (schema, attr, attrIndex, prototype)->
+	#TODO compile objects & lists & maps
+	if nested= @_nested
+		schema[<?=SCHEMA_ATTR.nested ?>+attrIndex]= nested
+		schema[<?=SCHEMA_ATTR.key ?>+attrIndex]= key if key= @_key # map
+	return
 

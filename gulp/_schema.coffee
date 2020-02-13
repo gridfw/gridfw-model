@@ -32,16 +32,19 @@ schemaAttrs= [
 	'freeze'	# If the subobject is freezed (could not accept other attributes)
 	'virtual'	# debug purpose, if this attr is virtual (do not save to DB)
 
+	'default'	# debug purpose
 	'getOnce'	# debug purpose
 	'getter'	# debug purpose
 	'setter'	# debug purpose
+	'method'	# debug purpose
 
 	'json'		# Debug purpose
 	'ignoreJsonParse'	# Debug purpose, when true, ignore when parsing json
 
 	'asserts'	# list of asserts
 	'pipe'		# Pipeline
-	'schema'	# subschema when object or list
+	'nested'	# subschema when object or list
+	'key'		# key when map
 
 ]
 

@@ -5,4 +5,5 @@ EMAIL_CHECK = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\
 
 # SYMBOLS
 SCHEMA= Symbol 'SCHEMA'
+MODEL_SYMB= Symbol 'MODEL'
 

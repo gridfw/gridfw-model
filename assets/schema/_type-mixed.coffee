@@ -10,6 +10,7 @@ _Mixed=
 _defineProperty Model, 'Mixed', get: ->
 	if _has this, 'all'
 		result= _create _modelPrototype,
+			[MODEL_SYMB]:	value: this # Model class
 			_assertVl:	value: {} # asserts
 			_pipe:		value: [] # pipeline
 			_pipeOnce:	value: [] # pipeOnce
@@ -21,4 +22,5 @@ _defineProperty Model, 'Mixed', get: ->
 	else
 		@_type= _Mixed
 		result= this
+	result._nested= null # reset nested object or list
 	return result

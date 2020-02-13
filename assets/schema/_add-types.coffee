@@ -3,9 +3,15 @@
 ###
 _defineTypeDirective= (descriptor)->
 	->
-		obj= if _has this, 'all' then Model.Mixed else this # Model
-		obj._type= descriptor
-		return obj
+		desc= if _has this, 'all' then Model.Mixed else this # Model
+		desc._type= descriptor
+		desc._nested= null # reset nested element info
+		return desc
+
+# _defineTypeFx= (descriptor)->
+# 	desc= Model.Mixed
+# 	desc._type= descriptor
+# 	return desc
 
 ###*
  * Add new types to the schema
@@ -19,7 +25,7 @@ _defineProperties Model,
 		try
 			throw 'Illegal arguments' unless arguments.length is 2
 			types= @_types # types map
-			typesFx= @typesFx # types map
+			typesFx= @_typesFx # types map
 			# Compile descriptor
 			throw "Illegal arguments" unless typeof (descriptor is 'object') and descriptor
 			# Iterate
