@@ -389,6 +389,10 @@ _compileMap= (nested, key, prototype, parentSchema)->
 	if nested= @_nested
 		types= @[ModelClass]._types
 		type= @_type
+		# nested schema
+		nestedSchema= []
+		nestedSchema[prototype]
+		# Compile
 		if type is types.Object
 			subschema= _compileObject nested, @_proto, schema
 		else if type is types.List
