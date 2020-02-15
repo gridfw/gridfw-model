@@ -33,10 +33,11 @@ _defineProperties Model,
 			for el, i in name
 				if typeof el is 'string'
 					throw "Type already set: #{el}" if _has types, el
-					types[el]= descriptor
-					# Add directive
 					throw "Reserved name: #{el}" if _has this, el
-					_defineProperty this, el, get: _defineTypeDirective {...descriptor, _typeName: el}
+					# Add directive
+					descriptor= {...descriptor, _typeName: el}
+					types[el]= descriptor
+					_defineProperty this, el, get: _defineTypeDirective descriptor
 				else if typeof el is 'function'
 					throw "Type already set: #{el}" if typesFx.has el
 					typesFx.set el, {...descriptor, _typeName: el.name}

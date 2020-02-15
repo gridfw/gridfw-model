@@ -6,6 +6,8 @@ _defineProperty= Object.defineProperty
 _defineProperties= Object.defineProperties
 _keys= Object.keys
 
+_setPrototypeOf= Object.setPrototypeOf
+
 _has= Reflect.has
 
 # Array

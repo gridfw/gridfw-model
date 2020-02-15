@@ -43,8 +43,8 @@ schemaAttrs= [
 
 	'asserts'	# list of asserts
 	'pipe'		# Pipeline
-	'nested'	# subschema when object or list
-	'key'		# key when map
+
+	'nested'	# subschema when object or list or map
 
 ]
 

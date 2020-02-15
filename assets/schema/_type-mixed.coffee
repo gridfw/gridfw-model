@@ -14,7 +14,7 @@ _defineProperty Model, 'Mixed', get: ->
 			_assertVl:	value: {} # asserts
 			_pipe:		value: [] # pipeline
 			_pipeOnce:	value: [] # pipeOnce
-			_proto:		value: {} # prototype
+			_proto:		value: {} # nested prototype (of nested object or list)
 			_type:
 				value: _Mixed	# basic type
 				configurable: yes

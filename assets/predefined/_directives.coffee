@@ -39,6 +39,9 @@ Model
 .addDirective 'check', 'function', (fx)-> @_check= fx
 .addDirective 'convert', 'function', (fx)-> @_convert= fx
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
+	# prepare descriptor
+	_setPrototypeOf this, @_type
+	# Add to schema
 	schema[<?=SCHEMA_ATTR.check ?>+attrIndex]= @_check
 	schema[<?=SCHEMA_ATTR.convert ?>+attrIndex]= @_convert
 	return
@@ -367,10 +370,34 @@ Model.compileAttrDirective (schema, attr, attrIndex, prototype)->
 	@_nested= ModelClass.value value
 	@_key= ModelClass.value key
 	return
+
+# Compile Object
+_compileObject= (nested, prototype, parentSchema)->
+	nestedSchema= []
+	nestedSchema
+_compileList= (nested, prototype, parentSchema)->
+	nestedSchema= []
+	nestedSchema
+_compileMap= (nested, key, prototype, parentSchema)->
+	nestedSchema= []
+	nestedSchema
+
+
+
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
 	#TODO compile objects & lists & maps
 	if nested= @_nested
-		schema[<?=SCHEMA_ATTR.nested ?>+attrIndex]= nested
-		schema[<?=SCHEMA_ATTR.key ?>+attrIndex]= key if key= @_key # map
+		types= @[ModelClass]._types
+		type= @_type
+		if type is types.Object
+			subschema= _compileObject nested, @_proto, schema
+		else if type is types.List
+			subschema= _compileList nested, @_proto, schema
+		else if type is types.Map
+			subschema= _compileMap nested, @_key, @_proto, schema
+		else
+			console.warn 'Illegal use of "@_nested": ', this
+			return
+		schema[<?=SCHEMA_ATTR.nested ?>+attrIndex]= subschema
 	return
 
