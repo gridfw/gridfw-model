@@ -27,16 +27,16 @@ compileCoffee= ->
 		.pipe GfwCompiler.template(settings).on 'error', GfwCompiler.logError
 		.pipe GulpCoffeescript(bare: true).on 'error', GfwCompiler.logError
 		<% if(isProd){ %>
-		.pipe Babel
-			presets: ['babel-preset-env']
-			plugins: [
-				['transform-runtime',{
-					helpers: no
-					polyfill: no
-					regenerator: no
-				}]
-				'transform-async-to-generator'
-			]
+		# .pipe Babel
+		# 	presets: ['babel-preset-env']
+		# 	plugins: [
+		# 		['transform-runtime',{
+		# 			helpers: no
+		# 			polyfill: no
+		# 			regenerator: no
+		# 		}]
+		# 		'transform-async-to-generator'
+		# 	]
 		.pipe uglify {compress: {toplevel: no, keep_infinity: on, warnings: on} }
 		<% } %>
 		.pipe GulpHeader('\ufeff')

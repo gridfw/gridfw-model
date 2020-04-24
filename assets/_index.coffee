@@ -37,3 +37,4 @@ class ModelClass
 ModelPrototype= ModelClass.prototype
 #=include main/_*.coffee
 #=include predefined/_*.coffee
+ModelClass.Mixed= Mixed

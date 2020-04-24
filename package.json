@@ -1,6 +1,6 @@
 {
   "name": "gridfw-model",
-  "version": "2.1.4",
+  "version": "2.1.6",
   "description": "Model Framework for javascript",
   "main": "build/node.js",
   "scripts": {

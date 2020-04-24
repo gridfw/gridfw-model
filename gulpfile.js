@@ -35,6 +35,7 @@ function runGulp(){
 	ps.stderr.on('data', function(data){console.error('ERROR>> ', data.trim())});
 	ps.on('error', function(err){ console.error('ERR>> ', err); });
 	ps.on('close', function(){ console.log('>> Closed.') });
+	return ps
 }
 
 /* compile gulp-file.coffee */
