@@ -1,22 +1,85 @@
 ###*
- * Utils
+ * Predefined directives
 ###
-# CB When serializing (toJSON or toDataBase)
-_toWrapper= (obj, ignoreAttrIndex, toCallbacksIndex)->
-	result= this
-	if schema= @[SCHEMA]
-		ignoreAttr= schema[ignoreAttrIndex]
-		toCbs= schema[toCallbacksIndex]
+ModelClass
+
+# TYPE
+# check @deprecated
+.addDirective 'check', 'function', (fx)-> @check= fx
+# Convert
+.addDirective 'convert', 'function', (fx)-> @convert= fx
+.compileAttrDirective (schema, attr, attrIndex, prototype)->
+	# prepare descriptor
+	#TODO Prepare type
+	_setPrototypeOf this, @type
+	# Add to schema
+	schema[<%=SCHEMA_ATTR.name %>+attrIndex]= attr
+	schema[<%=SCHEMA_ATTR.type %>+attrIndex]= @type if @type
+	schema[<%=SCHEMA_ATTR.convert %>+attrIndex]= @convert if @convert
+	return
+
+# Freeze
+.addDirective 'freeze', -> @freeze= yes
+.addDirective 'extensible', -> @freeze= no
+.compileAttrDirective (schema, attr, attrIndex, prototype, parentNodeDesc)->
+	isFreezed= @freeze
+	flags= schema[<%=SCHEMA_ATTR.flags %>+attrIndex] or 0
+	# Inherit
+	if (not isFreezed?) and not (flags&<%- SCHEMA.IS_FREEZE_SET %>)
+		isFreezed= @freeze= parentNodeDesc.freeze
+	# Apply
+	if isFreezed is true
+		flags|= <%- SCHEMA.FREEZE %>
+		flags|= <%- SCHEMA.IS_FREEZE_SET %>
+	else if isFreezed is false
+		flags&= <%- ~SCHEMA.FREEZE %>
+		flags|= <%- SCHEMA.IS_FREEZE_SET %>
+	# Save
+	schema[<%=SCHEMA_ATTR.flags %>+attrIndex]= flags
+	return
+
+# NULL
+.addDirective 'required', -> @null= no
+.addDirective 'optional', -> @null= yes
+.addDirective 'null', -> @null= yes
+.addDirective 'notNull', -> @null= no
+.compileAttrDirective (schema, attr, attrIndex, prototype)->
+	isNull= @null
+	if isNull is yes
+		schema[<%=SCHEMA_ATTR.flags %>+attrIndex]&= <%- ~SCHEMA.NOT_NULL %>
+	else if isNull is no
+		schema[<%=SCHEMA_ATTR.flags %>+attrIndex]|= <%- SCHEMA.NOT_NULL %>
+	return
+
+# JSON
+.addDirective 'enableJSON',				-> @json= 0b00
+.addDirective 'ignoreJsonStringify',	-> @json= 0b01
+.addDirective 'ignoreJsonParse',		-> @json= 0b10
+.addDirective 'ignoreJSON',				-> @json= 0b11
+.addDirective 'toJSON', 'function',		(fx)-> @toJSON= fx
+.addDirective 'fromJSON', 'function',	(fx)-> @fromJSON= fx
+
+# DATABASE
+.addDirective ['virtual', 'transient'], -> @virtual= yes
+.addDirective 'persist', -> @virtual= no
+.addDirective 'toDB', 'function', (fx)-> @toDB= fx
+.addDirective 'fromDB', 'function', (fx)-> @fromDB= fx
+
+# COMPILE DATABASE AND JSON
+.compileAttrDirective do ->
+	# CB When serializing (toJSON or toDataBase)
+	_toWrapper= (obj, ignoreAttr, toCbs)->
 		ignoreAttr= null unless ignoreAttr?.length
 		toCbs= null unless toCbs?.length
 		if ignoreAttr or toCbs
 			# copy object
 			result= {}
 			if ignoreAttr
-				for k,v of this
-					result[k]= v unless k in ignoreAttr
+				for k of obj
+					if (k not in ignoreAttr) and obj.hasOwnProperty k
+						result[k]= obj[k]
 			else
-				result[k]= v for k,v of this
+				_assign result, obj
 			# Convert values
 			if toCbs
 				i=0
@@ -25,171 +88,113 @@ _toWrapper= (obj, ignoreAttrIndex, toCallbacksIndex)->
 					attr= toCbs[i++]
 					cb= toCbs[i++]
 					if result.hasOwnProperty attr
-						result[attr]= cb.call this, result[attr]
-	return result
-_toJSONWrapper= -> _toWrapper(this, <%= SCHEMA.ignoreJsonAttrs %>, <%= SCHEMA.toJSON %>)
-# CB when sending to DB
-_toDBWrapper= -> _toWrapper(this, <%= SCHEMA.virtuals %>, <%= SCHEMA.toDB %>)
-
-###*
- * PREDIFINED DIRECTIVES
-###
-Model
-# TYPE
-.addDirective 'check', 'function', (fx)-> @_check= fx
-.addDirective 'convert', 'function', (fx)-> @_convert= fx
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	# prepare descriptor
-	_setPrototypeOf this, @_type
-	# Add to schema
-	schema[<?=SCHEMA_ATTR.check ?>+attrIndex]= @_check
-	schema[<?=SCHEMA_ATTR.convert ?>+attrIndex]= @_convert
-	return
-
-# Require
-.addDirective 'required', -> @_required= yes
-.addDirective 'optional', -> @_required= no
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	schema[<?=SCHEMA_ATTR.required ?>+attrIndex]= !!@_required
-	return
-
-# Freeze
-.addDirective 'freeze', -> @_freeze= yes
-.addDirective 'extensible', -> @_freeze= no
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	schema[<?=SCHEMA_ATTR.required ?>+attrIndex]= !!@_freeze
-	return
-
-# NULL
-.addDirective 'null', -> @_null= yes
-.addDirective 'notNull', -> @_null= no
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	schema[<?=SCHEMA_ATTR.null ?>+attrIndex]= !!@_null
-	return
-
-# JSON
-.addDirective 'jsonEnable', -> @_json= 0					# 0b00
-.addDirective ['jsonIgnore', 'ignoreJSON'], -> @_json= 3	# 0b11
-.addDirective 'jsonIgnoreParse', -> @_json= 2				# 0b10
-.addDirective 'jsonIgnoreStringify', -> @_json= 1			# 0b01
-.addDirective 'toJSON', 'function', (fx)-> @_toJSON= fx
-.addDirective 'fromJSON', 'function', (fx)-> @_fromJSON= fx
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	# checkes
-	json= @_json or 0
-	schema[<?=SCHEMA_ATTR.json ?>+attrIndex]= json	# debug purpose
-	schema[<?=SCHEMA_ATTR.ignoreJsonParse ?>+attrIndex]= !!(json&2) # Ignore data when parsing from JSON
-	# ignore when serializing
-	if json&1
-		(schema[<%= SCHEMA.ignoreJsonAttrs %>] ?= []).push attr
-		needsProto= yes
-	else if arr= schema[<%= SCHEMA.ignoreJsonAttrs %>]
-		_arrRemove arr, attr
-	# ToJSON
-	if toJsonCb= @_toJSON
-		if arr= schema[<%= SCHEMA.toJSON %>]
-			_arrRemove arr, attr, 2
+						result[attr]= cb.call obj, result[attr], attr
 		else
-			arr= schema[<%= SCHEMA.toJSON %>]= []
-		arr.push attr, toJsonCb
-		needsProto= yes
-	# ToJSON cb
-	if needsProto
-		_defineProperty prototype, 'toJSON',
-			value: _toJSONWrapper
-			configurable: yes
-	# fromJSON
-	if fromJsonCb= @_fromJSON
-		if arr= schema[<%= SCHEMA.fromJSON %>]
-			_arrRemove arr, attr, 2
-		else
-			arr= schema[<%= SCHEMA.fromJSON %>]= []
-		arr.push attr, fromJsonCb
-	return
+			result= obj
+		return result
+	# Compile JSON
+	_compileJSON= (schema, attr, attrIndex, prototype)->
+		# checkes
+		if (json= @json)?
+			schema[<%-SCHEMA_ATTR.flags %>+attrIndex]= schema[<%-SCHEMA_ATTR.flags %>+attrIndex]&(~3)|json
+			# ignore when serializing
+			if json&1
+				(schema[<%= SCHEMA.ignoreJsonAttrs %>] ?= []).push attr
+				needsProto= yes
+			else if arr= schema[<%= SCHEMA.ignoreJsonAttrs %>]
+				_arrRemove arr, attr
+		# ToJSON
+		if toJsonCb= @toJSON
+			if arr= schema[<%= SCHEMA.toJSON %>]
+				_arrRemove arr, attr, 2
+			else
+				arr= schema[<%= SCHEMA.toJSON %>]= []
+			arr.push attr, toJsonCb
+			needsProto= yes
+		# ToJSON cb
+		if needsProto
+			_toJSONWrapper= -> _toWrapper(this, schema[<%= SCHEMA.ignoreJsonAttrs %>], schema[<%= SCHEMA.toJSON %>])
+			for wrp in ModelClass.TO_JSON
+				_defineProperty prototype, wrp,
+					value: _toJSONWrapper
+					configurable: yes
+		# fromJSON
+		schema[<%= SCHEMA_ATTR.fromJSON %>+attrIndex]= fromJsonCb if fromJsonCb= @fromJSON
+		return
+	# Compile DB
+	_compileDB= (schema, attr, attrIndex, prototype)->
+		# Add to virtual attributes
+		if @virtual
+			schema[<%=SCHEMA_ATTR.flags %>+attrIndex]|= <%-SCHEMA.VIRTUAL %>	# debug purpose
+			(schema[<%=SCHEMA.virtuals %>] ?= []).push attr
+			needsProto= yes
+		else if @virtual is no
+			schema[<%=SCHEMA_ATTR.flags %>+attrIndex]&= <%-~SCHEMA.VIRTUAL %>	# debug purpose
+			if virtualAttrs= schema[<%=SCHEMA.virtuals %>]
+				_arrRemove virtualAttrs, attr
+		# ToDB
+		if toDBCb= @toDB
+			schema[<%-SCHEMA_ATTR.toDB %>+attrIndex]= toDBCb
+			if arr= schema[<%= SCHEMA.toDB %>]
+				_arrRemove arr, attr, 2
+			else
+				arr= schema[<%= SCHEMA.toJSON %>]= []
+			arr.push attr, toDBCb
+			needsProto= yes
+		# ToDB cb
+		if needsProto
+			# CB
+			_toDBWrapper= -> _toWrapper(this, schema[<%=SCHEMA.virtuals %>], schema[<%= SCHEMA.toDB %>])
+			# Add
+			for wrp in ModelClass.TO_DB
+				_defineProperty prototype, wrp,
+					value: _toDBWrapper
+					configurable: yes
+		# fromDB
+		schema[<%= SCHEMA_ATTR.fromDB %>+attrIndex]= fromDbCb if fromDbCb= @fromDB
+		return
+	# Compiler
+	return (schema, attr, attrIndex, prototype)->
+		_compileJSON.call this, schema, attr, attrIndex, prototype
+		_compileDB.call this, schema, attr, attrIndex, prototype
+		return
 
-# DATABASE
-.addDirective ['virtual', 'transient'], -> @_virtual= yes
-.addDirective 'persist', -> @_virtual= no
-.addDirective 'toDB', 'function', (fx)-> @_toDB= fx
-.addDirective 'fromDB', 'function', (fx)-> @_fromDB= fx
+
+# DEFAULT VALUE: Set a default value when parsing from JSON
+.addDirective 'default', (mixed)->
+	@type?= ModelClass._types.Mixed # Set type to "Mixed" if not yeat set
+	@default= mixed
+	return
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
-	isVirtual= !!@_virtual
-	schema[<?=SCHEMA_ATTR.virtual ?>+attrIndex]= isVirtual	# debug purpose
-	# Add to virtual attributes
-	if isVirtual
-		(schema[<%=SCHEMA.virtuals %>] ?= []).push attr
-		needsProto= yes
-	else if virtualAttrs= schema[<%=SCHEMA.virtuals %>]
-		_arrRemove virtualAttrs, attr
-	# ToDB
-	if toDBCb= @_toDB
-		if arr= schema[<%= SCHEMA.toDB %>]
-			_arrRemove arr, attr, 2
-		else
-			arr= schema[<%= SCHEMA.toJSON %>]= []
-		arr.push attr, toDBCb
-		needsProto= yes
-	# ToDB cb
-	if needsProto
-		_defineProperty prototype, 'toDB',
-			value: _toDBWrapper
-			configurable: yes
-		_defineProperty prototype, 'toBSON',
-			value: _toDBWrapper
-			configurable: yes
-	# fromDB
-	if fromDbCb= @_fromDB
-		if arr= schema[<%= SCHEMA.fromDB %>]
-			_arrRemove arr, attr, 2
-		else
-			arr= schema[<%= SCHEMA.fromDB %>]= []
-		arr.push attr, fromDbCb
+	if (fx= @default)?
+		schema[<%=SCHEMA_ATTR.default %>+attrIndex]= fx
 	return
 
 # GETTER - SETTER
-.addDirective 'default',null, (mixed)->
-	@_get= @getOnce= @_method= null
-	@_default= mixed
-	return
 .addDirective 'getter', 'function', (fx)->
-	@_getOnce= @_default= @_method= null
-	@_get= fx
-	return
-.addDirective 'setter', 'function', (fx)->
-	@_method= null
-	@_set= fx
+	@getOnce= @method= @alias= null
+	@get= fx
 	return
 .addDirective 'getOnce', 'function', (fx)->
-	@_get= @_default= @_method= null
-	@_getOnce= fx
+	@get= @method= @alias= null
+	@getOnce= fx
+	return
+.addDirective 'setter', 'function', (fx)->
+	@method= @alias= null
+	@set= fx
 	return
 .addDirective 'alias', 'string', (attrName)->
-	@_getOnce= @_default= @_method= null
-	@_get= -> @[attrName]
-	@_set= (data)->
-		@[attrName]= data
-		return
+	@getOnce= @get= @set= @method= null
+	@alias= attrName
 	return
 .addDirective 'method', 'function', (method)->
-	@_get= @set= @_getOnce= @default= null
-	@_method= method
+	@get= @set= @getOnce= @alias= null
+	@method= method
 	return
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
-	# default
-	if (fx= @_default)?
-		schema[<?=SCHEMA_ATTR.default ?>+attrIndex]= fx	# debug purpose
-		if typeof fx is 'function'
-			fx=
-				configurable: on
-				get: fx
-		else
-			fx=
-				configurable: on
-				value: fx
-		_defineProperty prototype, attr, fx
-	# get once
-	else if fx= @_getOnce
-		schema[<?=SCHEMA_ATTR.getOnce ?>+attrIndex]= fx	# debug purpose
+	# GET ONCE
+	if fx= @getOnce
+		# schema[<%=SCHEMA_ATTR.getOnce %>+attrIndex]= fx	# debug purpose
 		_defineProperty prototype, attr,
 			configurable: on
 			get: ->
@@ -201,27 +206,31 @@ Model
 					writable: on
 				return v
 	# Getter
-	else if fx= @_get
-		schema[<?=SCHEMA_ATTR.getter ?>+attrIndex]= fx	# debug purpose
-		if typeof fx is 'function'
-			_defineProperty prototype, attr,
-				get: fx
-				configurable: on
-		else
-			_defineProperty prototype, attr,
-				value: fx
-				configurable: on
+	else if fx= @get
+		# schema[<%=SCHEMA_ATTR.getter %>+attrIndex]= fx	# debug purpose
+		_defineProperty prototype, attr,
+			get: fx
+			configurable: on
 	# Setter
-	if fx= @_set
-		schema[<?=SCHEMA_ATTR.setter ?>+attrIndex]= fx	# debug purpose
+	if fx= @set
+		# schema[<%=SCHEMA_ATTR.setter %>+attrIndex]= fx	# debug purpose
 		_defineProperty prototype, attr,
 			set: fx
 			configurable: on
 	# Method
-	else if fx= @_method
-		schema[<?=SCHEMA_ATTR.method ?>+attrIndex]= fx	# debug purpose
+	if fx= @method
+		# schema[<%=SCHEMA_ATTR.method %>+attrIndex]= fx	# debug purpose
 		_defineProperty prototype, attr,
 			value: fx
+			configurable: on
+	# Alias
+	if fx= @alias
+		# schema[<%=SCHEMA_ATTR.alias %>+attrIndex]= fx	# debug purpose
+		_defineProperty prototype, attr,
+			get: -> @[fx]
+			set: (data) ->
+				@[fx]= data
+				return 
 			configurable: on
 	return
 
@@ -231,7 +240,7 @@ Model
  * 		assert(7)
  * 		assert(true)
  * 		assert(88, 'Illegal value')
- * TODO add @_assertVl
+ * TODO add @assertVl
 ###
 .addDirective 'asserts', 'object', (obj)->
 	# check format
@@ -239,169 +248,97 @@ Model
 		throw new Error "Expected #{k} to be object" unless typeof v is 'object' and v
 		throw new Error "Expected function #{k}.assert" unless typeof v.assert is 'function'
 	# save
-	@_asserts= obj
+	_assign @asserts, obj
 	return
-.addDirective 'assert', null, ['string', 'undefined'], (mixed, errMsg)->
-	asserts= @_assertVl
-	if typeof mixed is 'object' and mixed
+.addDirective 'assert', (mixed, errMsg)->
+	asserts= @assertVl
+	if typeof mixed is 'function'
+		@assertFxes.push null, null, mixed, errMsg
+	else if typeof mixed is 'object' and mixed
 		asserts[k]= [v, errMsg] for k,v of mixed
 	else
 		asserts.value= [mixed, errMsg]
 	return
-.addDirective 'length', null, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.length= [mixed, errMsg] 
-.addDirective 'lt', null, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.lt= [mixed, errMsg] 
-.addDirective 'lte', null, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.lte= [mixed, errMsg] 
-.addDirective 'gt', null, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.gt= [mixed, errMsg] 
-.addDirective 'gte', null, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.gte= [mixed, errMsg]
-.addDirective 'match', RegExp, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.match= [mixed, errMsg]
-.addDirective 'pathMatches', RegExp, ['string', 'undefined'], (mixed, errMsg)-> @_assertVl.pathMatches= [mixed, errMsg]
-# Create params
-_assertEquals= (data, param)-> data is param
-Model.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	assertions= []
-	asserts= @_asserts or {}
-	for k,arr of @_assertVl
-		param= arr[0]
-		msg= arr[1]
-		# check param
-		if k is 'value'
-			if typeof param is 'function'
-				cmp= param
-			else
-				cmp= _assertEquals
-		else
-			if av= asserts[k]
-				av.param? param
-				cmp= av.assert
-			else
-				throw new Error "Unsupported assert #{k} for type #{@_type.name}"
-		# push
-		assertions.push k, param, cmp, msg
-	# [assertKey, assertParam, assertCompare(currentObj, param), errMsg]
-	schema[<?=SCHEMA_ATTR.asserts ?>+attrIndex]= assertions
+.addDirective 'length', (mixed, errMsg)-> @assertVl.length= [mixed, errMsg] 
+.addDirective 'lt', (mixed, errMsg)-> @assertVl.lt= [mixed, errMsg] 
+.addDirective 'lte', (mixed, errMsg)-> @assertVl.lte= [mixed, errMsg]
+.addDirective 'gt', (mixed, errMsg)-> @assertVl.gt= [mixed, errMsg] 
+.addDirective 'gte', (mixed, errMsg)-> @assertVl.gte= [mixed, errMsg]
+.addDirective 'min', (mixed, errMsg)-> @assertVl.gte= [mixed, errMsg]
+.addDirective 'max', (mixed, errMsg)-> @assertVl.lte= [mixed, errMsg]
+.addDirective 'match', (regex, errMsg)->
+	throw new Error 'Expected RegExp as argument' unless regex instanceof RegExp
+	@assertVl.match= [regex, errMsg]
 	return
+.addDirective 'pathMatches', (regex, errMsg)->
+	throw new Error 'Expected RegExp as argument' unless regex instanceof RegExp
+	@assertVl.pathMatches= [regex, errMsg]
+	return
+.compileAttrDirective do ->
+	# Assert equals
+	_assertEquals= (data, param)-> data is param
+	_assertMessage= (msg, cmp)->
+		(data, param, key, parent, path)->
+			unless cmp data, param, key, parent
+				throw msg.replace('#{path}', path.join('.')).replace('#{param}', param)
+			true
+	# Interface
+	return (schema, attr, attrIndex, prototype)->
+		assertions= schema[<%=SCHEMA_ATTR.asserts %>+attrIndex] or []
+		asserts= @asserts
+		for k,arr of @assertVl
+			param= arr[0]
+			msg= arr[1]
+			# check param
+			if k is 'value'
+				if typeof param is 'function'
+					cmp= param
+					param= null
+				else
+					cmp= _assertEquals
+			else
+				if av= asserts[k]
+					av.param? param
+					cmp= av.assert
+					msg= av.msg
+					if typeof msg is 'string'
+						cmp= _assertMessage msg, cmp
+				else
+					throw new Error "Unsupported assert <#{k}> for type #{@typeName}"
+			# push
+			_arrRemove assertions, k, 4
+			assertions.push k, param, cmp, msg
+		# Push assert functions
+		assertions.push v for v in @assertFxes
+		# [assertKey, assertParam, assertCompare(currentObj, param), errMsg]
+		schema[<%=SCHEMA_ATTR.asserts %>+attrIndex]= assertions
+		return
+
 
 # PIPELINE
-.addDirective 'pipe', 'function', (fx)-> @_pipe.push fx
+.addDirective 'pipe', 'function', (fx)-> @pipe.push fx
 .addDirective 'pipeOnce', 'function', (fx)->
-	@_pipe.push fx
-	@_pipeOnce.push fx
+	@pipe.push fx
+	@pipeOnce.push fx
 	return
 .compileAttrDirective (schema, attr, attrIndex, prototype)->
-	# get all pipes
-	pipes= [@_pipe]
-	pipesOnce= [@_pipeOnce]
-	p= this
-	while p= p.__proto__
-		pipes.push p._pipe if p.hasOwnProperty '_pipe'
-		pipesOnce.push p._pipeOnce if p.hasOwnProperty '_pipeOnce'
-	# prepare pipeOnce
-	pipeOnceQ= []
-	for el in pipesOnce
-		pipeOnceQ.push a for a in el
 	# prepare pipe
-	pipes.reverse()
-	pipe= []
-	for el in pipes
-		pipe.push a for a in el
+	pipe= schema[<%=SCHEMA_ATTR.pipe %>+attrIndex] or []
+	pipe.push el for el in @pipe
 	# remove cb that should aprears once
+	pipeOnceQ= @pipeOnce
 	if pipeOnceQ.length
 		pipe= pipe.filter (el, i)-> (el not in pipeOnceQ) or (pipe.indexOf(el) is i)
 	# add to schema
-	schema[<?=SCHEMA_ATTR.pipe ?>+attrIndex]= pipe
+	schema[<%=SCHEMA_ATTR.pipe %>+attrIndex]= pipe
 	return
-
 
 # Prototype
-.addDirective 'proto', 'object', (proto)->
-	_proto= @_proto
-	for k,v of proto
-		_proto[k]= v
-	return
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	for k,v of @_proto
-		prototype[k]= v
-	return
-
-# Value
-.addDirective 'value', null, (mixed)->
-	# When function
-	if typeof mixed is 'function'
-		ModelClass= @[MODEL_SYMB]
-		typesFx= ModelClass._typesFx
-		# fx represent type: example: Number
-		if desc= typesFx.get mixed
-			@_type= desc
-		# if date.now, set it as default value
-		else if mixed is Date.now
-			@default mixed
-		# else: protype Method
-		else
-			@method mixed
-	# When list
-	else if _isArray mixed
-		switch mixed.length
-			when 1
-				@list mixed[0]
-			when 0
-				@list()
-			else
-				throw new Error "Expected one type for Array, #{mixed.length} are given."
-	# nested object
-	else if typeof mixed is 'object'
-		unless mixed
-			@Object._nested= {}
-		# descriptor
-		else if desc= mixed[MODEL_SYMB]
-			for k,v of desc
-				@[k]= v if typeof k is 'string' and k.startsWith '_'
-		# nested object
-		else 
-			@Object._nested= mixed
-	else
-		throw new Error "Illegal value"
-	return
-.addDirective 'list', null, (mixed)->
-	@List._nested= @[MODEL_SYMB].value mixed
-	return
-.addDirective 'map', null, null, (key, value)->
-	ModelClass= @[MODEL_SYMB]
-	@Map
-	@_nested= ModelClass.value value
-	@_key= ModelClass.value key
-	return
-
-# Compile Object
-_compileObject= (nested, prototype, parentSchema)->
-	nestedSchema= []
-	nestedSchema
-_compileList= (nested, prototype, parentSchema)->
-	nestedSchema= []
-	nestedSchema
-_compileMap= (nested, key, prototype, parentSchema)->
-	nestedSchema= []
-	nestedSchema
+.addDirective 'proto', 'object', (proto)-> _assign @proto, proto if proto
+# .compileAttrDirective (schema, attr, attrIndex, prototype)->
+# 	_assign prototype, @proto
+# 	return
 
 
 
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	#TODO compile objects & lists & maps
-	if nested= @_nested
-		types= @[ModelClass]._types
-		type= @_type
-		# nested schema
-		nestedSchema= []
-		nestedSchema[prototype]
-		# Compile
-		if type is types.Object
-			subschema= _compileObject nested, @_proto, schema
-		else if type is types.List
-			subschema= _compileList nested, @_proto, schema
-		else if type is types.Map
-			subschema= _compileMap nested, @_key, @_proto, schema
-		else
-			console.warn 'Illegal use of "@_nested": ', this
-			return
-		schema[<?=SCHEMA_ATTR.nested ?>+attrIndex]= subschema
-	return
 

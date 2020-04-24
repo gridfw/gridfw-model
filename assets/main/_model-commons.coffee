@@ -1,4 +1,0 @@
-###*
- * Commons model api
-###
-ModelCommons= {}

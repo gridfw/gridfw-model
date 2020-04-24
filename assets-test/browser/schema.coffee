@@ -1,13 +1,23 @@
 try
+	Model= new ModelClass()
 	# ...
 	console.log 'Test schema ========================>'
-	userSchema= Model.extensible.value
-		_id:	Model.ObjectId
+	userSchema= Model.freeze.value
+		_id:	Model.Hex.default('445a54c566b4e')
 		id:		Model.alias '_id'
 		firstName: Model.String.required
-		lastName: String
+		lastName: Model.String
+		status: Model.virtual.extensible.value
+			st1: Model.default(5)
+			st2: Model.value
+				st21: Boolean
+				st22: Model.list {
+					cc:
+						c2:String
+				}
+			bshi: -> 'yasit blu ghrfis'
 
-		age: Model.Int.default(18).gt(18).lt(99)
+		age: Model.virtual.Int.default(18).gte(18).lt(99)
 		jobs: [
 			title: String
 			subTitle: String
@@ -15,95 +25,109 @@ try
 				from: Date
 				to: Date
 		]
+		jaja: Model.list(String).proto({
+			cc: -> 'hello'
+			khalid: -> 'khalid'
+			})
+		map: Model.proto({cc:15}).map String,
+			a: String
+			b: Model.Int
+		modelSignature: -> 'hello user'
 
+	# userSchema= Model.value
+	# 	_id: Model.ObjectId
+	# 	id: Model.alias '_id'
+	# 	firstName: Model.required.jsonIgnoreStringify.String
+	# 	lastName: Model.virtual.required.jsonIgnoreStringify.String
 
-	userSchema= Model.value
-		_id: Model.ObjectId
-		id: Model.alias '_id'
-		firstName: Model.required.jsonIgnoreStringify.String
-		lastName: Model.virtual.required.jsonIgnoreStringify.String
+	# 	age: Model.Number.default(15)
 
-		age: Model.Number.default(15)
+	# 	jobs:[
+	# 		title: String
+	# 		subTitle: String
+	# 		period:
+	# 			from: Model.Date.required
+	# 			to: Date
+	# 	]
 
-		jobs:[
-			title: String
-			subTitle: String
-			period:
-				from: Model.Date.required
-				to: Date
-		]
+	# 	skills: [String]
 
-		skills: [String]
+	# 	networking:
+	# 		Model.required
+	# 		.list [Number]
+	# 		.proto
+	# 			test1: ->
+	# 			test2: (a,b,c)->
 
-		networking:
-			Model.required
-			.list [Number]
-			.listMethods
-				test1: ->
-				test2: (a,b,c)->
-
-		method1: ->
-	console.log '>> user schema descriptor: ', userSchema
-
+	# 	method1: ->
+	# console.log '>> user schema descriptor: ', userSchema
+	
 	# compile schema
-	User = Model.from
-		name: 'user'
-		schema: userSchema
+	User = Model.define 'User', userSchema
 
-	console.log '>> user schema: ', User[Model.SCHEMA]
-	console.log '>> user signature:\n', User.modelSignature()
+	console.log '---- USER: ', User[Model.SCHEMA]
+	console.log User.toString() # Print User format to console
 
-	# override schema
-	Model.override
-		name: 'user'
-		schema:
-			jobs:[
-				title: Number
-				period:
-					to: Model.required
-					title: Model.String.max(500).min(0)
-			]
-			addedAttr: Model.String.required
-			firstName: Model.optional
-			# skills: [
-			# 	skillTitle: String
-			# 	skillLevel: Number
-			# 	]
-			# networking:[[String]]
-	# override 2
-	Model.override
-		name: 'user'
-		schema:
-			skills: Model.clear.value
-				skillCC: String
-				skill2: Boolean
-	console.log '>> Overrided user signature:\n', User.modelSignature()
+	# console.log '>> user signature:\n', User.modelSignature()
+
+	# # override schema
+	# Model.override 'User',
+	# 	id2: String
+	# 	cc:
+	# 		kk: Number
+	# 		bb: Boolean
+	# 	_id:
+	# 		timestamp: Model.Unsigned
+	# 		rand:	Math.random
+	# 		date:	Date.now
+	# 	jobs:[
+	# 		title: Number
+	# 		period:
+	# 			to: Model.required
+	# 			title: Model.String.max(500).min(0)
+	# 			yoga: Model.of('Yoga').freeze.value
+	# 				jj: Number
+	# 				nk: Date.now
+	# 	]
+	# 	# addedAttr: Model.String.required
+	# 	# firstName: Model.optional
+	# 	# skills: [
+	# 	# 	skillTitle: String
+	# 	# 	skillLevel: Number
+	# 	# 	]
+	# 	networking:[[String]]
+	# 	net: [[[[cc:Number, f:String]]]]
+	# console.log '---- USER overrided: '
+	# console.log User.toString() # Print User format to console
+	# console.log Model.all.Yoga.toString() # Print User format to console
+	# # override 2
+	# Model.override
+	# 	name: 'user'
+	# 	schema:
+	# 		skills: Model.clear.value
+	# 			skillCC: String
+	# 			skill2: Boolean
+	# console.log '>> Overrided user signature:\n', User.modelSignature()
+	# console.log '>> user schema: ', User[Model.SCHEMA]
 
 	# console.log '-----', Object.getOwnPropertyDescriptors Model.__proto__
 
-	# User = Model.from
-	# 	name: 'user'
-	# 	# schema: Model.extensible.value
-	# 	schema:
-	# 		firstName: Model.required.jsonIgnoreStringify.String
-	# 		lastName: Model.virtual.required.jsonIgnoreStringify.String.toJSON(->'test')
-	# 		company: String
-	# 		age: Model.Number.default(5).min(3).max(28).assert(->)
-	# 		user: Model.ref 'user'
-	# 		phones: [Number]
-	# 		phones2: [
-	# 			Model.Number.max(50) # not working!
-	# 		]
-	# 		phones3: Model.required.list Number
+	Skills = Model.define 'Skills', [String]
+	console.log '------ Skills'
+	console.log Skills.toString()
 
-	# 		# phones: [
-	# 		# 	test:String
-	# 		# 	list: [Number]
-	# 		# ]
-	# 		# emails: Model.list ({
-	# 		# 	type: String
-	# 		# 	value: String
-	# 		# 	})
+	# # Extends
+	# Member= Model.extends 'Member', 'User',
+	# 	since: Date
+	# 	godfather: Model.of('User')
+	# 	_id:
+	# 		herro: String
+
+	# console.log Member.toString()
+	# console.log User.toString()
+
+
+
 	# # print user
 	# console.log "------- user signature: \n", User.modelSignature()
 			
@@ -240,18 +264,40 @@ try
 	# err= UserModel2.fromJSON userA
 	# console.log '----err: ', err
 	# # console.log '----user JSON: ', 
-	console.log 'DB Test ========================>'
-	UserModel3= Model.from
-		name: 'user3'
-		schema:
-			name: Model.String.fromJSON (data)-> 'received: '+ data
-			lastName: Model.String
-			docs: Model.list Model.String.fromJSON (data)-> 'lst>> '+ data #.toJSON -> 'cccc'.jsonIgnore
+	# console.log 'DB Test ========================>'
+	# UserModel3= Model.from
+	# 	name: 'user3'
+	# 	schema:
+	# 		name: Model.String.fromJSON (data)-> 'received: '+ data
+	# 		lastName: Model.String
+	# 		docs: Model.list Model.String.fromJSON (data)-> 'lst>> '+ data #.toJSON -> 'cccc'.jsonIgnore
 
 
-	user3= {name: 'khalid', lastName: 'rafik', age: 15, docs: ['u', 'k', 'iii']}
-	UserModel3.fromJSON user3
-	console.log 'user3: ', JSON.stringify user3
+	# user3= {name: 'khalid', lastName: 'rafik', age: 15, docs: ['u', 'k', 'iii']}
+	# UserModel3.fromJSON user3
+	# console.log 'user3: ', JSON.stringify user3
+
+	console.log 'DATA TEST: ══════════════════════════════════════════════════════════════════'
+	user=
+		name: 'Khalid'
+		firstName: 'khalid'
+		fullName: 'RAFIK khalid'
+		# age: 31
+		hobbies: ['sleep', 'sellp2']
+		status:
+			st1:'st shit'
+			cc:'ops'
+			# hello: -> '7mar'
+		skills: [{
+			name: 'skill1'
+		},{
+			name: 'skill2'
+		}]
+		jobs: title: 'hello'
+	user2= User.fromJSON user
+	console.log '------- User2: ', JSON.stringify(user2, null, "\t")
+	console.log '------- DB: ', user2.exportDB()
+	console.log '>>>>>', User.fromJsonToDb user
 
 catch err
 	console.error "uncaught error:", err
