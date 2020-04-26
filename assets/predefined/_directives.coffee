@@ -126,7 +126,7 @@ ModelClass
 		# Add to virtual attributes
 		if @virtual
 			schema[<%=SCHEMA_ATTR.flags %>+attrIndex]|= <%-SCHEMA.VIRTUAL %>	# debug purpose
-			(schema[<%=SCHEMA.virtuals %>] ?= []).push attr
+			(schema[<%-SCHEMA.virtuals %>] ?= []).push attr
 			needsProto= yes
 		else if @virtual is no
 			schema[<%=SCHEMA_ATTR.flags %>+attrIndex]&= <%-~SCHEMA.VIRTUAL %>	# debug purpose

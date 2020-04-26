@@ -60,6 +60,7 @@ typings/
 # next.js build output
 .next
 gulp-file.tmp.*
+assets-1/*
 build/*
 test-build/*
 gulp-file.js

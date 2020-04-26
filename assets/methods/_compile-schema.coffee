@@ -35,8 +35,8 @@ _compileSchema: do ->
 		_compileAttrDescriptor attrDescriptor
 		# do compile
 		for compiler in ModelClass._compilers
-			compiler.call attrDescriptor, _tmpDescriptor, attr, 0, nodePrototype, node
-		_tmpDescriptor.length= 0 # Remove any added value
+			compiler.call attrDescriptor, _tmpDescriptor, attr, <%-SCHEMA.length %>, nodePrototype, node
+			_tmpDescriptor.length= 0 # Remove any added value
 		return
 	# Interface
 	return (rootModel, schema)->
@@ -158,6 +158,7 @@ _compileSchema: do ->
 			# return model
 			return @all[rootModel]
 		catch err
+			console.log err
 			err= "Schema-compiler>> #{err}\nat: #{nodePath.join '.'}" if typeof err is 'string'
 			throw err
 
