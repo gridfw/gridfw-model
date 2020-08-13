@@ -127,7 +127,7 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 											# CONVERT EXISTING OBJECT
 											<% if(isConvertDB){ %>
 											_defineProperties attrValue, _getOwnPropertyDescriptors nestedSchema[<%-SCHEMA.prototype %>]
-											
+
 											# CREATE NEW PROTOTYPED OBJECT
 											<% } else { %>
 											oldAttrValue= attrValue
@@ -153,7 +153,7 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 											# CONVERT EXISTING LIST
 											<% if(isConvertDB){ %>
 											_defineProperties attrValue, _getOwnPropertyDescriptors nestedSchema[<%-SCHEMA.prototype %>]
-											
+
 											# CREATE NEW PROTOTYPED LIST
 											<% } else { %>
 											oldAttrValue= attrValue
@@ -170,7 +170,7 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 											# CONVERT EXISTING LIST
 											<% if(isConvertDB){ %>
 											_defineProperties attrValue, _getOwnPropertyDescriptors nestedSchema[<%-SCHEMA.prototype %>]
-											
+
 											# CREATE NEW PROTOTYPED LIST
 											<% } else { %>
 											oldAttrValue= attrValue
@@ -221,7 +221,10 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 									path:	attrPath
 								}
 								<% }else{ %>
-								err= "#{err}\nAt: #{attrPath.join '.'}" if typeof err is 'string'
+								if typeof err is 'string'
+									err= "#{err}\nAt: #{attrPath.join '.'}"
+								else if err instanceof Error
+									err= "#{err.stack}\nAt: #{attrPath.join '.'}"
 								throw err
 								<% } %>
 							# Save value
@@ -261,11 +264,12 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 							mapKey2= nodeSchema[<%-SCHEMA.length+SCHEMA_ATTR.convert %>] mapKey
 							throw 'Illegal key' unless mapKey2 is mapKey
 							# Asserts
+							attrName= null
 							assertsArr= nodeSchema[<%-SCHEMA.length+SCHEMA_ATTR.asserts %>]
 							assertsI= 0
 							assertsLen= assertsArr.length
 							while assertsI<assertsLen # [assertKey, assertParam, assertCompare(data, param, parentObj), errMsg]
-								unless <%-awaitWhenAsync %>assertsArr[assertsI+2] attrValue, assertsArr[assertsI+1], attrName, node
+								unless <%-awaitWhenAsync %>assertsArr[assertsI+2] mapKey, assertsArr[assertsI+1], attrName, node, attrPath
 									throw assertsArr[assertsI+3] or "Assertion failed>> #{assertsArr[assertsI+1]} #{assertsArr[assertsI+2]}"
 								assertsI+= 4
 							<% } %>
@@ -288,7 +292,10 @@ function parseInstance(fxName, isJSON, isAssert, isAsync){
 					path:	nodePath
 				}
 				<% }else{ %>
-				err= "#{err}\nAt: #{nodePath.join '.'}" if typeof err is 'string'
+				if typeof err is 'string'
+					err= "#{err}\nAt: #{nodePath.join '.'}"
+				else if err instanceof Error
+					err= "#{err.stack}\nAt: #{nodePath.join '.'}"
 				throw err
 				<% } %>
 		# Remove undefined and null values if is "fromJsonToDb"

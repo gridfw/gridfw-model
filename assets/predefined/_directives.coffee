@@ -191,48 +191,57 @@ ModelClass
 	@get= @set= @getOnce= @alias= null
 	@method= method
 	return
-.compileAttrDirective (schema, attr, attrIndex, prototype)->
-	# GET ONCE
-	if fx= @getOnce
-		# schema[<%=SCHEMA_ATTR.getOnce %>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			configurable: on
-			get: ->
-				v= fx.call this
-				_defineProperty this, attr,
-					value: v
-					configurable: on
-					enumerable: on
-					writable: on
-				return v
-	# Getter
-	else if fx= @get
-		# schema[<%=SCHEMA_ATTR.getter %>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			get: fx
-			configurable: on
-	# Setter
-	if fx= @set
-		# schema[<%=SCHEMA_ATTR.setter %>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			set: fx
-			configurable: on
-	# Method
-	if fx= @method
-		# schema[<%=SCHEMA_ATTR.method %>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			value: fx
-			configurable: on
-	# Alias
-	if fx= @alias
-		# schema[<%=SCHEMA_ATTR.alias %>+attrIndex]= fx	# debug purpose
-		_defineProperty prototype, attr,
-			get: -> @[fx]
-			set: (data) ->
-				@[fx]= data
-				return 
-			configurable: on
-	return
+.compileAttrDirective do ->
+	# getOnce
+	_getOnce= (fx, attr)->
+		->
+			v= fx.call this
+			_defineProperty this, attr,
+				value: v
+				configurable: on
+				enumerable: on
+				writable: on
+			return v
+	_aliasGet= (attrName)->
+		-> @[attrName]
+	_aliasSet= (attrName)->
+		(data) ->
+			@[attrName]= data
+			return
+	# interface
+	return (schema, attr, attrIndex, prototype)->
+		# GET ONCE
+		if fx= @getOnce
+			# schema[<%=SCHEMA_ATTR.getOnce %>+attrIndex]= fx	# debug purpose
+			_defineProperty prototype, attr,
+				configurable: on
+				get: _getOnce fx, attr
+		# Getter
+		else if fx= @get
+			# schema[<%=SCHEMA_ATTR.getter %>+attrIndex]= fx	# debug purpose
+			_defineProperty prototype, attr,
+				get: fx
+				configurable: on
+		# Setter
+		if fx= @set
+			# schema[<%=SCHEMA_ATTR.setter %>+attrIndex]= fx	# debug purpose
+			_defineProperty prototype, attr,
+				set: fx
+				configurable: on
+		# Method
+		if fx= @method
+			# schema[<%=SCHEMA_ATTR.method %>+attrIndex]= fx	# debug purpose
+			_defineProperty prototype, attr,
+				value: fx
+				configurable: on
+		# Alias
+		if fx= @alias
+			# schema[<%=SCHEMA_ATTR.alias %>+attrIndex]= fx	# debug purpose
+			_defineProperty prototype, attr,
+				get: _aliasGet fx
+				set: _aliasSet fx
+				configurable: on
+		return
 
 ###*
  * Asserts
@@ -259,10 +268,10 @@ ModelClass
 	else
 		asserts.value= [mixed, errMsg]
 	return
-.addDirective 'length', (mixed, errMsg)-> @assertVl.length= [mixed, errMsg] 
-.addDirective 'lt', (mixed, errMsg)-> @assertVl.lt= [mixed, errMsg] 
+.addDirective 'length', (mixed, errMsg)-> @assertVl.length= [mixed, errMsg]
+.addDirective 'lt', (mixed, errMsg)-> @assertVl.lt= [mixed, errMsg]
 .addDirective 'lte', (mixed, errMsg)-> @assertVl.lte= [mixed, errMsg]
-.addDirective 'gt', (mixed, errMsg)-> @assertVl.gt= [mixed, errMsg] 
+.addDirective 'gt', (mixed, errMsg)-> @assertVl.gt= [mixed, errMsg]
 .addDirective 'gte', (mixed, errMsg)-> @assertVl.gte= [mixed, errMsg]
 .addDirective 'min', (mixed, errMsg)-> @assertVl.gte= [mixed, errMsg]
 .addDirective 'max', (mixed, errMsg)-> @assertVl.lte= [mixed, errMsg]
@@ -338,7 +347,3 @@ ModelClass
 # .compileAttrDirective (schema, attr, attrIndex, prototype)->
 # 	_assign prototype, @proto
 # 	return
-
-
-
-
