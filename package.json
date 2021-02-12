@@ -22,29 +22,29 @@
   },
   "homepage": "https://github.com/gridfw/gridfw-model#readme",
   "devDependencies": {
-    "cli-table": "^0.3.1",
-    "gridfw-compiler": "^1.2.0",
-    "gulp": "^4.0.2",
-    "@babel/core": "^7.8.3",
+    "@babel/core": "^7.12.16",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.7.0",
+    "cli-table": "^0.3.4",
+    "gridfw-compiler": "^1.2.4",
+    "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-chug": "^0.5.1",
     "gulp-coffeescript": "0.0.15",
-    "gulp-ejs": "^5.0.0",
+    "gulp-ejs": "^5.1.0",
     "gulp-include": "^2.4.1",
     "gulp-pug": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-template": "^5.0.0",
-    "gulp-terser": "^1.2.0",
+    "gulp-terser": "^1.4.1",
     "gulp-uglify-es": "^1.0.4",
     "gulp-util": "^3.0.8",
-    "through2": "^3.0.1"
+    "through2": "^3.0.2"
   },
   "dependencies": {
     "coredigix-xss": "^1.0.0",
     "gulp-header": "^2.0.9",
-    "mongodb": "^3.2.4"
+    "mongodb": "^3.6.4"
   }
 }
