@@ -148,6 +148,21 @@ ModelClass
 			param: _checkParamDate
 			msg: '#{path} Expected greater than or equals to #{param}'
 			assert: (obj, param)-> obj >= param
+# Timestamp
+.addType 'Timestamp',
+	Mixed().Number.check (data) -> Number.isSafeInteger(data)
+		.convert (data)->
+			if typeof data is 'string'
+				if isNaN(data)
+					data= (new Date data).getTime()
+					throw "Invalid date" if isNaN data
+				else
+					data= parseInt(data)
+					throw "Invalid date" unless Number.isSafeInteger data
+			else unless Number.isSafeInteger(data)
+				throw "Invalid date"
+			return data
+
 # TEXT
 .addType [String, 'String'], # Native string, no changes
 	Mixed()
